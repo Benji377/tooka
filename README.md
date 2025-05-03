@@ -1,2 +1,6 @@
-# tooka
-Your Ruby automation sidekick
+# Tooka
+Your Automation Sidekick
+
+## Future
+
+- https://www.codetriage.com/

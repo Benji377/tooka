@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "tooka"
+version = "0.1.0"
+description = "Your automation sidekick"
+authors = ["Your Name <you@example.com>"]
+packages = [{ include = "tooka" }]
+
+[tool.poetry.scripts]
+tooka = "tooka.cli:app"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+typer = "^0.15.0"
+rich = "^14.0.0"
+apscheduler = "^3.11.0"
+pluggy = "^1.5.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.5"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
