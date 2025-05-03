@@ -2,7 +2,7 @@
 name = "tooka"
 version = "0.1.0"
 description = "Your automation sidekick"
-authors = ["Your Name <you@example.com>"]
+authors = ["Benjamin Demetz <demetzbenjamin23@gmail.com>"]
 packages = [{ include = "tooka" }]
 
 [tool.poetry.scripts]
