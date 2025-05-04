@@ -3,7 +3,7 @@
 
 # Tooka
 <div align="center">
-    <img src="assets/logo.png" alt="Tooka Logo" style="width: 45%; max-width: 400px; vertical-align: middle;">
+    <img src="assets/logo-banner.png" alt="Tooka Logo" style="width: 70%; max-width: 1280px; vertical-align: middle;">
 </div>
 
 ## Introduction
