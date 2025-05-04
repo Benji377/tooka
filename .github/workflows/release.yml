@@ -1,12 +1,7 @@
 name: Publish
 
 on:
-  push:
-    tags:
-      - '*.*.*'
-
-permissions:
-  contents: read
+  workflow_dispatch:
 
 jobs:
   pypi-publish:
@@ -15,8 +10,7 @@ jobs:
     environment:
       name: pypi
       url: https://pypi.org/project/tooka-cli/
-    permissions:
-      id-token: write
+    permissions: write-all
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
