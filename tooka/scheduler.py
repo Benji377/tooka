@@ -1,12 +1,21 @@
 from apscheduler.schedulers.blocking import BlockingScheduler
-from tooka.core import load_tasks
+from tooka.task.task_list import TaskList
 
-def start_scheduler():
+
+class Scheduler:
+    tasks_list = TaskList([])
     scheduler = BlockingScheduler()
-    tasks = load_tasks()
 
-    for task in tasks:
-        scheduler.add_job(task["func"], "interval", seconds=task["interval"], id=task["name"])
+    def __init__(self):
+        self.tasks_list.load_tasks()
 
-    print("🚀 Tooka is running. Press Ctrl+C to exit.")
-    scheduler.start()
+    def start_scheduler(self):
+        for task in self.tasks_list.get_tasks():
+            self.scheduler.add_job(task["func"], "interval", seconds=task["interval"], id=task["name"])
+
+        print("🚀 Tooka is running. Press Ctrl+C to exit.")
+        self.scheduler.start()
+
+    def stop_scheduler(self):
+        self.scheduler.shutdown()
+
