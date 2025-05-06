@@ -9,8 +9,8 @@ homepage = "https://github.com/Benji377/tooka"  # Replace with actual
 repository = "https://github.com/Benji377/tooka"  # GitHub repo
 documentation = "https://github.com/Benji377/tooka/wiki"  # Optional
 keywords = ["automation", "scheduler", "task runner", "cli", "python"]
-classifiers = [
-    "Development Status :: 1 - Planning",
+classifiers = [ # https://pypi.org/classifiers/
+    "Development Status :: 3 - Alpha",
     "Environment :: Console",
     "Intended Audience :: Developers",
     "Intended Audience :: End Users/Desktop",
@@ -35,3 +35,7 @@ pytest = "^8.3.5"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+
+[tool.pylint.MASTER]
+ignore-paths = ["tests"]
