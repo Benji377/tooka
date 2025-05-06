@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/project/tooka-cli/
+      url: https://pypi.org/p/tooka
     permissions: write-all
     steps:
       - uses: actions/checkout@v4
@@ -50,8 +50,8 @@ jobs:
             dist/tooka-*.tar.gz
             dist/tooka-*.whl
 
-#      - name: Publish package distributions to PyPI
-#        uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
 
   # Upload to GitHub release job
   upload_to_release:
