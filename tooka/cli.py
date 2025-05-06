@@ -8,10 +8,11 @@ import typer
 app = typer.Typer()
 console = Console()
 
+
 @app.command()
 def run(
-        name: Annotated[str, typer.Option(help="Name a task to run")] = "all",
-        once: Annotated[bool, typer.Option(help="Only run the task once")] = False,
+    name: Annotated[str, typer.Option(help="Name a task to run")] = "all",
+    once: Annotated[bool, typer.Option(help="Only run the task once")] = False,
 ):
     """
     Run your Tooka automation tasks.
@@ -23,8 +24,8 @@ def run(
 
 @app.command()
 def list(
-        name: Annotated[str, typer.Option(help="Filter tasks by name pattern")] = "",
-        active: Annotated[bool, typer.Option(help="Only show active tasks")] = False,
+    name: Annotated[str, typer.Option(help="Filter tasks by name pattern")] = "",
+    active: Annotated[bool, typer.Option(help="Only show active tasks")] = False,
 ):
     """
     List all tasks currently running. You can further filter by name patterns (simple regex) and state.
@@ -43,9 +44,9 @@ def list(
 
 @app.command()
 def add(
-        name: Annotated[str, typer.Option(help="Name a task to add")],
-        interval: Annotated[int, typer.Option(help="Interval in seconds")],
-        command: Annotated[str, typer.Option(help="Python import path, e.g. my_module:my_function")],
+    name: Annotated[str, typer.Option(help="Name a task to add")],
+    interval: Annotated[int, typer.Option(help="Interval in seconds")],
+    command: Annotated[str, typer.Option(help="Python import path, e.g. my_module:my_function")],
 ):
     """
     Add a task to your Tooka automation tasks. This requires a name, an interval to run the task and the python
@@ -57,9 +58,7 @@ def add(
 
 
 @app.command()
-def remove(
-        name: Annotated[str, typer.Argument(help="Name a task to remove")]
-):
+def remove(name: Annotated[str, typer.Argument(help="Name a task to remove")]):
     """
     Removes a task by its name. Returns true or false (with error) depending on whether the task was removed.
     """
@@ -68,7 +67,7 @@ def remove(
 
 @app.command()
 def init(
-        overwrite: Annotated[bool, typer.Option(help="Overwrite existing file")] = False,
+    overwrite: Annotated[bool, typer.Option(help="Overwrite existing file")] = False,
 ):
     """
     Creates a new example file in the current directory that can be used to create a new task.
@@ -89,8 +88,8 @@ def status():
 
 @app.command()
 def validate(
-        file: Annotated[str, typer.Argument(help="File to validate, must be a Tooka task file")],
-        verbose: Annotated[bool, typer.Option(help="Verbose output")] = False,
+    file: Annotated[str, typer.Argument(help="File to validate, must be a Tooka task file")],
+    verbose: Annotated[bool, typer.Option(help="Verbose output")] = False,
 ):
     """
     Validates a Tooka task file. This should be performed before submitting the task.

@@ -10,6 +10,7 @@ MODULE_REGISTRY = {
     "file": FileModule,
 }
 
+
 def load_module(name: str, config: dict):
     """Loads a single module by its name and initializes it with the given config"""
     cls = MODULE_REGISTRY.get(name)

@@ -4,8 +4,10 @@ import json
 import os
 from .task import Task
 
+
 class TaskManager:
     """Class defining the Task Manager"""
+
     def __init__(self, tasks_dir: str):
         """
         Initialized the TaskManager with the location of the directory containing all the tasks
@@ -13,7 +15,7 @@ class TaskManager:
         """
         self.tasks_dir = tasks_dir
         os.makedirs(self.tasks_dir, exist_ok=True)
-        self.tasks = {}
+        self.tasks: dict[str, Task] = {}
 
     def load_tasks(self):
         """
@@ -39,7 +41,7 @@ class TaskManager:
             "output": task.output,
             "modules": task.module_defs,
         }
-        with open(path, "w") as f:
+        with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4)
         self.tasks[task.name] = task
 

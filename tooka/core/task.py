@@ -2,8 +2,10 @@
 
 from .module_loader import load_module
 
+
 class Task:
     """Represents a single task that can be scheduled"""
+
     def __init__(self, task_data: dict):
         """
         Initializes a Task object with all its attributes given as a dictionary
