@@ -36,6 +36,7 @@ pytest = "^8.3.5"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-
 [tool.pylint.MASTER]
 ignore-paths = ["tests"]
+max-line-length = 120
+disable= "R0903"

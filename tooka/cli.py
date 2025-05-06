@@ -1,7 +1,9 @@
+"""The main entry point of the app. Represents all commands of the CLI"""
+
 from typing import Annotated
+import importlib.metadata
 from rich.console import Console
 import typer
-import importlib.metadata
 
 app = typer.Typer()
 console = Console()
@@ -106,4 +108,3 @@ def version():
     """
     app_version = importlib.metadata.version("tooka")
     console.print(f"Tooka v{app_version}")
-

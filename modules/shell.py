@@ -1,8 +1,11 @@
-from .base import BaseModule
+"""Contains the shell module"""
+
 import subprocess
+from .base import BaseModule
 
 
 class ShellModule(BaseModule):
+    """Allows to execute a simple shell command"""
     def run(self) -> str:
         """
         Executes the shell command defined in the config and returns the output.
@@ -14,7 +17,7 @@ class ShellModule(BaseModule):
             raise ValueError("No shell command provided in the config.")
 
         # Run the shell command
-        result = subprocess.run(command, shell=True, capture_output=True, text=True)
+        result = subprocess.run(command, shell=True, capture_output=True, text=True, check=False)
 
         if result.returncode != 0:
             # In case of failure, we can return stderr to the caller

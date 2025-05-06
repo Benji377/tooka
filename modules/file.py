@@ -1,10 +1,17 @@
+"""Contains the file module"""
+
 import os
-from .base import BaseModule
 import subprocess
+from subprocess import CalledProcessError
+from .base import BaseModule
 
 
 class FileModule(BaseModule):
+    """A module to interact with files on the system"""
     def __init__(self, config: dict):
+        """
+        Calls the parent module and then does some simple checks to the given file
+        """
         # Make sure to call the parent class constructor
         super().__init__(config)
         self.file_path = self.config.get("file")
@@ -31,7 +38,7 @@ class FileModule(BaseModule):
                 self.last_modified = current_modified
 
                 # Run the command defined in the config
-                result = subprocess.run(self.command, shell=True, capture_output=True, text=True)
+                result = subprocess.run(self.command, shell=True, capture_output=True, text=True, check=True)
 
                 if result.returncode != 0:
                     # In case of error, return stderr
@@ -39,7 +46,6 @@ class FileModule(BaseModule):
 
                 # Return stdout as the result of the file change action
                 return result.stdout
-            else:
-                return "No changes detected."
-        except Exception as e:
+            return "No changes detected."
+        except CalledProcessError as e:
             return f"Error: {str(e)}"
