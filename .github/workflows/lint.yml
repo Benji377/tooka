@@ -48,7 +48,7 @@ jobs:
 
       - name: Run black
         if: success() || failure()
-        run: poetry run black tooka --check
+        run: poetry run black tooka --check --diff
 
       - name: Run mypy
         if: success() || failure()
