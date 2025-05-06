@@ -3,6 +3,22 @@ name = "tooka"
 version = "0.1.0"
 description = "Your automation sidekick"
 authors = ["Benjamin Demetz <demetzbenjamin23@gmail.com>"]
+license = "GPL-3.0-or-later"
+readme = "README.md"
+homepage = "https://github.com/Benji377/tooka"  # Replace with actual
+repository = "https://github.com/Benji377/tooka"  # GitHub repo
+documentation = "https://github.com/Benji377/tooka/wiki"  # Optional
+keywords = ["automation", "scheduler", "task runner", "cli", "python"]
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "Topic :: Utilities",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent"
+]
 
 [tool.poetry.scripts]
 tooka = "tooka.cli:app"
