@@ -23,7 +23,7 @@ def run(
 
 
 @app.command()
-def list(
+def list_tasks(
     name: Annotated[str, typer.Option(help="Filter tasks by name pattern")] = "",
     active: Annotated[bool, typer.Option(help="Only show active tasks")] = False,
 ):
