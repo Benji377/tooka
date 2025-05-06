@@ -37,6 +37,23 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pylint.MASTER]
-ignore-paths = ["tests"]
+ignore-paths = ["tests", ".venv", ".git", "__pycache__"]
+ignore-patterns = ["^\\..*/.*"]
 max-line-length = 120
 disable= "R0903"
+
+[tool.black]
+line-length = 120
+exclude = '''
+/(
+    \.venv
+  | \.git
+  | \.mypy_cache
+  | __pycache__
+  | tests
+)/
+'''
+
+[tool.mypy]
+python_version = "3.13"
+exclude = "^(\\.venv|\\.git|__pycache__|tests)/"

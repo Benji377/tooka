@@ -44,12 +44,12 @@ jobs:
 
       - name: Run pylint
         if: success() || failure()
-        run: poetry run pylint .
+        run: poetry run pylint tooka
 
       - name: Run black
         if: success() || failure()
-        run: poetry run black . --check
+        run: poetry run black tooka --check
 
       - name: Run mypy
         if: success() || failure()
-        run: poetry run mypy .
+        run: poetry run mypy tooka
