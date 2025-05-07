@@ -8,60 +8,91 @@ on:
   workflow_dispatch:
 
 jobs:
-  lint:
+  setup:
     runs-on: ubuntu-latest
+    outputs:
+      python-version: ${{ steps.setup-python.outputs.python-version }}
     steps:
-
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+
+      - id: setup-python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.13'
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - uses: snok/install-poetry@v1
         with:
           virtualenvs-create: true
           virtualenvs-in-project: true
           virtualenvs-path: .venv
           installer-parallel: true
 
-      - name: Load cached venv
-        id: cached-poetry-dependencies
+      - name: Cache dependencies
         uses: actions/cache@v4
         with:
           path: .venv
-          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
 
       - name: Install dependencies
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction --no-root
+        run: |
+          poetry install --no-interaction
+          poetry add pylint black mypy
 
-      - name: Install project
-        run: poetry install --no-interaction
-
-      - name: Add temporary deps
-        run: poetry add pylint black mypy
+      - name: Upload virtual environment
+        uses: actions/upload-artifact@v4
+        with:
+          name: venv
+          path: .venv
 
   lint_pylint:
     runs-on: ubuntu-latest
-    needs: [lint]
+    needs: setup
     steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - uses: snok/install-poetry@v1
+
+      - name: Download virtualenv
+        uses: actions/download-artifact@v4
+        with:
+          name: venv
+          path: .venv
+
       - name: Run pylint
-        if: success() || failure()
         run: poetry run pylint tooka
 
   lint_black:
     runs-on: ubuntu-latest
-    needs: [lint]
+    needs: setup
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: snok/install-poetry@v1
+      - uses: actions/download-artifact@v4
+        with:
+          name: venv
+          path: .venv
       - name: Run black
-        if: success() || failure()
         run: poetry run black tooka --check --diff
 
   lint_mypy:
     runs-on: ubuntu-latest
-    needs: [lint]
+    needs: setup
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: snok/install-poetry@v1
+      - uses: actions/download-artifact@v4
+        with:
+          name: venv
+          path: .venv
       - name: Run mypy
-        if: success() || failure()
         run: poetry run mypy tooka
