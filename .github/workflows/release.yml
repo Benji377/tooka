@@ -6,6 +6,9 @@ on:
 env:
   VERSION: "v1.0.0"
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -50,7 +53,4 @@ jobs:
           draft: true
           generate_release_notes: true
           tag_name: v${{ env.VERSION }}
-          files: |
-            tooka-ubuntu-latest-${{ env.VERSION }}
-            tooka-macos-latest-${{ env.VERSION }}
-            tooka-windows-latest-${{ env.VERSION }}
+          files: tooka-*
