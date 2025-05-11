@@ -1,55 +1,35 @@
-name: Lint Code
+name: Lint Go Code
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch:
 
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - name: Set up Go
+        uses: actions/setup-go@v3
         with:
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          virtualenvs-path: .venv
-          installer-parallel: true
+          go-version: '1.24'  # You can adjust the version as needed
 
-      - name: Load cached venv
-        id: cached-poetry-dependencies
+      - name: Cache Go modules
         uses: actions/cache@v4
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          path: ~/.cache/go-build
+          key: ${{ runner.os }}-go-modules-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-modules-
 
-      - name: Install dependencies
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction --no-root
+      - name: Install golangci-lint
+        run: |
+          curl -sSfL https://github.com/golangci/golangci-lint/releases/download/v1.51.2/golangci-lint-1.51.2-linux-amd64.tar.gz | tar -xzv -C /tmp
+          sudo mv /tmp/golangci-lint-1.51.2-linux-amd64/golangci-lint /usr/local/bin
 
-      - name: Install project
-        run: poetry install --no-interaction
-
-      - name: Add temporary deps
-        run: poetry add pylint black mypy
-
-      - name: Run pylint
-        if: success() || failure()
-        run: poetry run pylint tooka
-
-      - name: Run black
-        if: success() || failure()
-        run: poetry run black tooka --check --diff
-
-      - name: Run mypy
-        if: success() || failure()
-        run: poetry run mypy tooka
+      - name: Run golangci-lint
+        run: golangci-lint run ./...
