@@ -26,4 +26,3 @@ jobs:
         with:
           name: Go-results
           path: TestResults.json
-        run: go test ./...
