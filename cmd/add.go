@@ -35,7 +35,12 @@ var addCmd = &cobra.Command{
 			return
 		}
 
-		taskScheduler.AddTask(task)
+		_, err = taskScheduler.AddTask(task)
+		if err != nil {
+			fmt.Printf("Error scheduling task: %v\n", err)
+			return
+		}
+
 		fmt.Printf("Task '%s' added and scheduled.\n", name)
 	},
 }
