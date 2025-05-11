@@ -18,7 +18,7 @@ func TestCLI_Version(t *testing.T) {
 	}
 
 	// Check if the output contains the expected version string
-	if !strings.Contains(string(output), "Tooka version") {
+	if !strings.Contains(string(output), "tooka version") {
 		t.Errorf("Expected version in output, but got: %s", string(output))
 	}
 }
