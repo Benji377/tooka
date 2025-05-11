@@ -1,13 +1,15 @@
 package cmd
 
 import (
+	"os"
+	"path/filepath"
 	"github.com/Benji377/tooka/internal/core"
 	"github.com/spf13/cobra"
 )
 
 var taskManager *core.TaskManager
 var taskScheduler *core.TaskScheduler
-
+var tasksDir = filepath.Join(os.Getenv("HOME"), ".tooka", "tasks")
 var version string = "1.0.0"
 
 var rootCmd = &cobra.Command{
@@ -18,9 +20,8 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() error {
-	taskScheduler = core.NewTaskScheduler()
-	taskManager = core.NewTaskManager(taskScheduler)
-	go taskScheduler.Start()
+	taskManager = core.GetManager(tasksDir)
+	taskScheduler = taskManager.TaskScheduler
 	return rootCmd.Execute()
 }
 
@@ -30,4 +31,5 @@ func init() {
 	rootCmd.AddCommand(addCmd)
 	rootCmd.AddCommand(removeCmd)
 	rootCmd.AddCommand(statusCmd)
+	rootCmd.AddCommand(toggleCmd)
 }

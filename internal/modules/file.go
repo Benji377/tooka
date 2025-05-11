@@ -15,7 +15,7 @@ type FileModule struct {
 	Mutex        sync.Mutex
 }
 
-func NewFileModule(config map[string]interface{}) (*FileModule, error) {
+func NewFileModule(config map[string]any) (*FileModule, error) {
 	path, ok1 := config["file"].(string)
 	cmd, ok2 := config["on-change"].(string)
 

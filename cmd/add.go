@@ -3,44 +3,37 @@ package cmd
 import (
 	"fmt"
 	"github.com/Benji377/tooka/internal/core"
+	"github.com/Benji377/tooka/internal/utils"
 	"github.com/spf13/cobra"
 )
 
 var addCmd = &cobra.Command{
-	Use:   "add",
+	Use:   "add task",
 	Short: "Add a new task",
-	Long:  `Add a task with specific configuration like name, interval, and command.`,
+	Long:  "Add a task with from the given JSON file",
+	Example: "tooka add test-task.json",
 	Run: func(cmd *cobra.Command, args []string) {
-		name := "ping"
-		interval := 60
-		command := "echo 'Ping task executed'"
-
-		task := &core.Task{
-			Name:     name,
-			Schedule: fmt.Sprintf("*/%d * * * *", interval),
-			Modules: []map[string]any{
-				{
-					"shell": map[string]any{
-						"command": command,
-					},
-				},
-			},
-			Output: "task_log.txt",
+		// Check if the user provided a file
+		if len(args) < 1 {
+			fmt.Println("Please provide a file")
+			return
 		}
+		path := args[0]
 
-		taskFile := fmt.Sprintf("%s.json", name)
-		err := taskManager.SaveTask(task, taskFile)
-		if err != nil {
-			fmt.Printf("Error saving task: %v\n", err)
+		// Validate the structure first using gjson
+		if err := utils.ValidateTaskJSON(path); err != nil {
+			fmt.Printf("Invalid task JSON: %v\n", err)
 			return
 		}
 
-		_, err = taskScheduler.AddTask(task)
+		// Load and build the task object
+		task, err := core.LoadTaskFromFile(path)
 		if err != nil {
-			fmt.Printf("Error scheduling task: %v\n", err)
+			fmt.Printf("Failed to load task: %v\n", err)
 			return
 		}
 
-		fmt.Printf("Task '%s' added and scheduled.\n", name)
+		// TODO: Save to DB
+		fmt.Printf("Task '%s' loaded and ready to run.\n", task.Name)
 	},
 }

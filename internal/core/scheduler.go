@@ -1,72 +1,84 @@
 package core
 
 import (
-	"fmt"
 	"log"
-	"os"
+	"time"
 
-	"github.com/robfig/cron/v3"
+	"github.com/go-co-op/gocron"
 )
 
-// TaskScheduler holds the cron scheduler and task management
+// TaskScheduler holds the scheduler and manages task scheduling.
 type TaskScheduler struct {
-	cronScheduler *cron.Cron
-	tasks         map[string]*Task
+	Scheduler   *gocron.Scheduler
+	taskManager *TaskManager
+	Jobs        map[string]*gocron.Job // Map to store tasks by name to their corresponding job
 }
 
-// NewTaskScheduler creates a new TaskScheduler instance
-func NewTaskScheduler() *TaskScheduler {
+// NewTaskScheduler creates a new TaskScheduler instance.
+func NewTaskScheduler(taskManager *TaskManager) *TaskScheduler {
+	scheduler := gocron.NewScheduler(time.UTC)
+
+	// Create and return the scheduler
 	return &TaskScheduler{
-		cronScheduler: cron.New(cron.WithLogger(cron.VerbosePrintfLogger(log.New(os.Stdout, "cron: ", log.LstdFlags)))),
-		tasks:         make(map[string]*Task),
+		Scheduler:   scheduler,
+		taskManager: taskManager,
+		Jobs:        make(map[string]*gocron.Job), // Initialize the jobs map
 	}
 }
 
-// AddTask adds a task to the scheduler using its cron schedule
-func (s *TaskScheduler) AddTask(task *Task) (cron.EntryID, error) {
-	// Parse cron schedule
-	_, err := cron.ParseStandard(task.Schedule)
-	if err != nil {
-		return 0, fmt.Errorf("invalid cron schedule: %w", err)
-	}
+// Start starts the task scheduler.
+func (ts *TaskScheduler) Start() {
+	// Periodically check for new tasks or task state changes
+	go ts.checkTasks()
 
-	// Add task to scheduler
-	id, err := s.cronScheduler.AddFunc(task.Schedule, func() {
+	// Start the scheduler
+	ts.Scheduler.StartAsync()
+}
+
+// Stop stops the task scheduler.
+func (ts *TaskScheduler) Stop() {
+	ts.Scheduler.Stop()
+}
+
+// checkTasks checks the task manager's tasks and schedules them based on their state.
+func (ts *TaskScheduler) checkTasks() {
+	for {
+		// Iterate through all tasks
+		tasks := ts.taskManager.ListTasks()
+		for _, task := range tasks {
+			if task.Enabled {
+				// If the task is enabled and not scheduled, add it to the scheduler
+				if _, exists := ts.Jobs[task.Name]; !exists {
+					ts.scheduleTask(task)
+				}
+			} else {
+				// If the task is disabled, remove it from the scheduler if it exists
+				if job, exists := ts.Jobs[task.Name]; exists {
+					ts.Scheduler.RemoveByReference(job)
+					delete(ts.Jobs, task.Name)
+				}
+			}
+		}
+
+		// Wait for a bit before checking again (can adjust the interval as needed)
+		time.Sleep(30 * time.Second)
+	}
+}
+
+// scheduleTask schedules a task based on its cron schedule.
+func (ts *TaskScheduler) scheduleTask(task *Task) {
+	job, err := ts.Scheduler.Cron(task.Schedule).Do(func() {
+		// Call the Run method on the task when it's triggered
 		task.Run()
 	})
 
 	if err != nil {
-		return 0, fmt.Errorf("failed to schedule task %s: %w", task.Name, err)
+		log.Printf("Error scheduling task %s: %v\n", task.Name, err)
+		return
 	}
 
-	task.CronID = id
+	// Store the job in the jobs map
+	ts.Jobs[task.Name] = job
 
-	// Store task for reference (you could add more sophisticated state tracking)
-	s.tasks[task.Name] = task
-
-	return id, nil
-}
-
-// Start starts the cron scheduler
-func (s *TaskScheduler) Start() {
-	s.cronScheduler.Start()
-}
-
-// Stop stops the cron scheduler
-func (s *TaskScheduler) Stop() {
-	s.cronScheduler.Stop()
-}
-
-// GetTask gets a task by name
-func (s *TaskScheduler) GetTask(name string) (*Task, bool) {
-	task, exists := s.tasks[name]
-	return task, exists
-}
-
-// ListTasks lists all tasks currently scheduled
-func (s *TaskScheduler) ListTasks() {
-	fmt.Println("Scheduled Tasks:")
-	for _, task := range s.tasks {
-		fmt.Printf("Task Name: %s, Schedule: %s\n", task.Name, task.Schedule)
-	}
+	log.Printf("Task '%s' scheduled with cron expression: %s\n", task.Name, task.Schedule)
 }

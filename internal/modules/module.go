@@ -9,7 +9,7 @@ type Module interface {
 }
 
 // Factory function to load a module from JSON-style input
-func LoadModule(moduleMap map[string]map[string]interface{}) (Module, error) {
+func LoadModule(moduleMap map[string]map[string]any) (Module, error) {
 	for name, config := range moduleMap {
 		switch name {
 		case "shell":
