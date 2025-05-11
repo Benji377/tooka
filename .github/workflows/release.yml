@@ -46,11 +46,20 @@ jobs:
     steps:
       - name: Download release artifacts
         uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+#      - name: Create attestation for all builds
+#        uses: actions/attest-build-provenance@v2
+#        with:
+#          subject-path: artifacts/tooka-*
 
       - name: Create a GitHub Release (Draft)
         uses: softprops/action-gh-release@v2
         with:
           draft: true
           generate_release_notes: true
-          tag_name: v${{ env.VERSION }}
-          files: tooka-*
+          name: Tooka ${{ env.VERSION }}
+          tag_name: ${{ env.VERSION }}
+          files: artifacts/tooka-*
