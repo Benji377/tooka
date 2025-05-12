@@ -40,8 +40,14 @@ func TestCLI_Add_InvalidTask(t *testing.T) {
 		"description": "An invalid test task",
 		"modules": ["invalid-module"]
 	}`
-	os.WriteFile(taskFile, []byte(taskJSON), 0644)
-	defer os.Remove(taskFile)
+	if err := os.WriteFile(taskFile, []byte(taskJSON), 0644); err != nil {
+		t.Fatalf("Failed to write task file: %v", err)
+	}
+	defer func() {
+		if err := os.Remove(taskFile); err != nil {
+			t.Errorf("Failed to remove task file: %v", err)
+		}
+	}()
 
 	// Simulate running the "tooka add invalid_task.json" command
 	cmd := exec.Command("../tooka", "add", taskFile)
