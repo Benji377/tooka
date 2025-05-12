@@ -23,7 +23,7 @@ func TestCLI_Run_CombinedModules(t *testing.T) {
 				"config": {
 					"url": "https://httpbin.org/get",
 					"method": "GET",
-					"return": "status"
+					"timeout": "5s"
 				}
 			}
 		]

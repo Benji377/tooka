@@ -11,8 +11,14 @@ func TestSQLModule(t *testing.T) {
 	dbPath := "test.db"
 
 	// Prepare SQLite test DB
-	os.WriteFile(dbPath, nil, 0644)
-	defer os.Remove(dbPath)
+	if err := os.WriteFile(dbPath, nil, 0644); err != nil {
+		t.Fatalf("Failed to create test DB file: %v", err)
+	}
+	defer func() {
+		if err := os.Remove(dbPath); err != nil {
+			t.Fatalf("Failed to remove test DB file: %v", err)
+		}
+	}()
 
 	createSchema := exec.Command("sqlite3", dbPath, "CREATE TABLE items (id INTEGER PRIMARY KEY, name TEXT); INSERT INTO items (name) VALUES ('apple');")
 	if err := createSchema.Run(); err != nil {

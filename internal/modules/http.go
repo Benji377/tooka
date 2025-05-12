@@ -76,7 +76,11 @@ func (m *HTTPModule) Run() string {
 	if err != nil {
 		return fmt.Sprintf("Request error: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			fmt.Printf("Error closing response body: %v\n", cerr)
+		}
+	}()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {

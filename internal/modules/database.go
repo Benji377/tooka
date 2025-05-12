@@ -30,13 +30,21 @@ func (m *SQLModule) Run() string {
 	if err != nil {
 		return fmt.Sprintf("Failed to open DB: %v", err)
 	}
-	defer db.Close()
+	defer func() {
+		if cerr := db.Close(); cerr != nil {
+			fmt.Printf("Error closing DB: %v\n", cerr)
+		}
+	}()
 
 	rows, err := db.Query(m.Query)
 	if err != nil {
 		return fmt.Sprintf("Query failed: %v", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if cerr := rows.Close(); cerr != nil {
+			fmt.Printf("Error closing rows: %v\n", cerr)
+		}
+	}()
 
 	cols, _ := rows.Columns()
 	var results []string
