@@ -23,7 +23,6 @@ type ModuleConfig struct {
 	Config map[string]any `json:"config"`
 }
 
-
 // LoadTaskFromFile reads a JSON file and parses it into a Task object
 func LoadTaskFromFile(path string) (*Task, error) {
 	data, err := os.ReadFile(path)
@@ -45,7 +44,6 @@ func LoadTaskFromFile(path string) (*Task, error) {
 		}
 		task.CompiledModules = append(task.CompiledModules, modInstance)
 	}
-
 
 	return &task, nil
 }

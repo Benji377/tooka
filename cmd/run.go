@@ -67,7 +67,7 @@ var runCmd = &cobra.Command{
 			}
 		}
 		if !quiet {
-		fmt.Println("\n" + ui.HeaderStyle.Render("Execution Summary"))
+			fmt.Println("\n" + ui.HeaderStyle.Render("Execution Summary"))
 		}
 		if len(success) > 0 && !quiet {
 			fmt.Println(ui.SuccessStyle.Render("✅ Success:"))

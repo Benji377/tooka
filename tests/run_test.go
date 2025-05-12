@@ -1,8 +1,8 @@
 package tests
 
 import (
-	"strings"
 	"os/exec"
+	"strings"
 	"testing"
 )
 
@@ -31,7 +31,6 @@ func TestCLI_Run_Task(t *testing.T) {
 		t.Errorf("Expected task running message, but got: %s", output)
 	}
 }
-
 
 func TestCLI_Run_Quiet(t *testing.T) {
 	taskFile := "test_task.json"

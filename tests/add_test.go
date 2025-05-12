@@ -3,8 +3,8 @@ package tests
 import (
 	"os"
 	"os/exec"
-	"testing"
 	"strings"
+	"testing"
 )
 
 func TestCLI_Add_ValidTask(t *testing.T) {
@@ -28,7 +28,6 @@ func TestCLI_Add_ValidTask(t *testing.T) {
 		t.Errorf("Expected task to be loaded, but got: %s", output)
 	}
 }
-
 
 func TestCLI_Add_InvalidTask(t *testing.T) {
 	// Create a temporary invalid task file

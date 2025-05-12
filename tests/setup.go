@@ -3,8 +3,8 @@ package tests
 import (
 	"os"
 	"os/exec"
-	"testing"
 	"strings"
+	"testing"
 )
 
 // Helper function to create a temporary task file
