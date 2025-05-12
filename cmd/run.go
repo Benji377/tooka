@@ -21,24 +21,28 @@ var runCmd = &cobra.Command{
 	Use:   "run [task-name...]",
 	Short: "Run one or more tasks by name",
 	Long:  "Executes one or more Tooka tasks by name, optionally writing output to a file and showing results.",
+	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		core.Log.Info().Msg("[Tooka RUN] Running tasks: " + fmt.Sprintf("%v", args))
 		taskNames = args
-		if len(taskNames) == 0 {
-			fmt.Println(ui.ErrorStyle.Render("❌ Please specify at least one task name."))
-			return
-		}
-
 		var wg sync.WaitGroup
 		results := make(chan runResult, len(taskNames))
 
+		core.Log.Info().Msg("[Tooka RUN] Starting task execution")
+
+		// Iterate over the task names and run them concurrently
+		// We use a WaitGroup to wait for all tasks to finish
 		for _, name := range taskNames {
 			task, ok := taskManager.GetTask(name)
+			core.Log.Info().Msg("[Tooka RUN] Loading task: " + name)
 			if !ok {
 				results <- runResult{name: name, err: fmt.Errorf("task not found")}
+				core.Log.Warn().Msg("[Tooka RUN] Task not found: " + name)
 				continue
 			}
 
 			wg.Add(1)
+			core.Log.Info().Msg("[Tooka RUN] Running task: " + name)
 			go func(t *core.Task) {
 				defer wg.Done()
 				s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
@@ -52,10 +56,12 @@ var runCmd = &cobra.Command{
 				}
 				results <- runResult{name: t.Name, err: err}
 			}(task)
+			core.Log.Info().Msg("[Tooka RUN] Task started: " + name)
 		}
 
 		wg.Wait()
 		close(results)
+		core.Log.Info().Msg("[Tooka RUN] All tasks completed")
 
 		success := []string{}
 		failed := []string{}

@@ -28,8 +28,13 @@ func GetManager(backupDir string) *TaskManager {
 		// If the backup directory does not exist, create it.
 		if _, err := os.Stat(backupDir); os.IsNotExist(err) {
 			if err := os.MkdirAll(backupDir, 0755); err != nil {
+				Log.Err(err).Msg("[MANAGER] failed to create backup directory: " + err.Error())
 				fmt.Printf("Warning: failed to create backup directory: %v\n", err)
+			} else {
+				Log.Info().Msgf("[MANAGER] created backup directory: %s", backupDir)
 			}
+		} else {
+			Log.Debug().Msgf("[MANAGER] backup directory exists: %s", backupDir)
 		}
 		// Initialize the TaskManager instance.
 
@@ -38,7 +43,10 @@ func GetManager(backupDir string) *TaskManager {
 			tasksFolder: backupDir,
 		}
 		if err := instance.LoadFromBackup(); err != nil {
+			Log.Warn().Msgf("[MANAGER] failed to load tasks from backup: %v", err)
 			fmt.Printf("Warning: failed to load tasks from backup: %v\n", err)
+		} else {
+			Log.Info().Msg("[MANAGER] loaded tasks from backup")
 		}
 	})
 	return instance
@@ -50,11 +58,13 @@ func (m *TaskManager) LoadFromBackup() error {
 	defer m.mu.Unlock()
 
 	if m.loaded {
+		Log.Debug().Msg("[MANAGER] tasks already loaded from backup")
 		return nil
 	}
 
 	files, err := os.ReadDir(m.tasksFolder)
 	if err != nil {
+		Log.Error().Msgf("[MANAGER] failed to read backup directory: %v", err)
 		return fmt.Errorf("failed to read backup directory: %w", err)
 	}
 
@@ -66,13 +76,16 @@ func (m *TaskManager) LoadFromBackup() error {
 		fullPath := filepath.Join(m.tasksFolder, file.Name())
 		task, err := LoadTaskFromFile(fullPath)
 		if err != nil {
+			Log.Warn().Msgf("[MANAGER] skipping invalid task file: %s (%v)", file.Name(), err)
 			fmt.Printf("Skipping invalid task file: %s (%v)\n", file.Name(), err)
 			continue
 		}
 		m.tasks[task.Name] = task
+		Log.Info().Msgf("[MANAGER] loaded task: %s", task.Name)
 	}
 
 	m.loaded = true
+	Log.Info().Msg("[MANAGER] finished loading tasks from backup")
 	return nil
 }
 
@@ -82,21 +95,26 @@ func (m *TaskManager) AddTask(task *Task) error {
 	defer m.mu.Unlock()
 
 	m.tasks[task.Name] = task
+	Log.Info().Msgf("[MANAGER] added task to memory: %s", task.Name)
 
 	data, err := json.MarshalIndent(task, "", "  ")
 	if err != nil {
+		Log.Error().Msgf("[MANAGER] failed to marshal task: %v", err)
 		return fmt.Errorf("failed to marshal task: %w", err)
 	}
 
 	if err := os.MkdirAll(m.tasksFolder, 0755); err != nil {
+		Log.Error().Msgf("[MANAGER] failed to ensure backup directory: %v", err)
 		return fmt.Errorf("failed to ensure backup directory: %w", err)
 	}
 
 	path := filepath.Join(m.tasksFolder, task.Name+".json")
 	if err := os.WriteFile(path, data, 0644); err != nil {
+		Log.Error().Msgf("[MANAGER] failed to write task file: %v", err)
 		return fmt.Errorf("failed to write task file: %w", err)
 	}
 
+	Log.Info().Msgf("[MANAGER] saved task to disk: %s", task.Name)
 	return nil
 }
 
@@ -106,16 +124,20 @@ func (m *TaskManager) RemoveTask(name string) error {
 	defer m.mu.Unlock()
 
 	if _, exists := m.tasks[name]; !exists {
+		Log.Warn().Msgf("[MANAGER] tried to remove non-existent task: %s", name)
 		return fmt.Errorf("task %q does not exist", name)
 	}
 
 	delete(m.tasks, name)
+	Log.Info().Msgf("[MANAGER] removed task from memory: %s", name)
 
 	path := filepath.Join(m.tasksFolder, name+".json")
 	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		Log.Error().Msgf("[MANAGER] failed to delete task file: %v", err)
 		return fmt.Errorf("failed to delete task file: %w", err)
 	}
 
+	Log.Info().Msgf("[MANAGER] deleted task file from disk: %s", name)
 	return nil
 }
 
@@ -125,6 +147,11 @@ func (m *TaskManager) GetTask(name string) (*Task, bool) {
 	defer m.mu.Unlock()
 
 	task, ok := m.tasks[name]
+	if ok {
+		Log.Debug().Msgf("[MANAGER] retrieved task: %s", name)
+	} else {
+		Log.Debug().Msgf("[MANAGER] task not found: %s", name)
+	}
 	return task, ok
 }
 
@@ -137,6 +164,7 @@ func (m *TaskManager) ListTasks() []*Task {
 	for _, t := range m.tasks {
 		tasks = append(tasks, t)
 	}
+	Log.Debug().Msgf("[MANAGER] listed all tasks (%d)", len(tasks))
 	return tasks
 }
 
@@ -147,13 +175,16 @@ func (m *TaskManager) SaveTask(task *Task) error {
 
 	data, err := json.MarshalIndent(task, "", "  ")
 	if err != nil {
+		Log.Err(err).Msgf("[MANAGER] failed to marshal task: %v", err)
 		return fmt.Errorf("failed to marshal task: %w", err)
 	}
 
 	path := filepath.Join(m.tasksFolder, task.Name+".json")
 	if err := os.WriteFile(path, data, 0644); err != nil {
+		Log.Err(err).Msgf("[MANAGER] failed to write task file: %v", err)
 		return fmt.Errorf("failed to write task file: %w", err)
 	}
 
+	Log.Info().Msgf("[MANAGER] saved task to disk: %s", task.Name)
 	return nil
 }

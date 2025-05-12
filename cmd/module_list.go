@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/Benji377/tooka/internal/core"
 	"github.com/Benji377/tooka/internal/modules"
 	"github.com/Benji377/tooka/internal/ui"
 	"github.com/spf13/cobra"
@@ -11,7 +12,9 @@ import (
 var moduleListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List available module types",
+	Long:  `Lists all available module types and their descriptions.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		core.Log.Info().Msg("[Tooka MODULE LIST] Listing available module types")
 
 		// Table Header
 		rows := []string{"Name", "Description"}

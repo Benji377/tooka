@@ -10,7 +10,7 @@ var taskManager *core.TaskManager
 var rootCmd = &cobra.Command{
 	Use:     "tooka",
 	Short:   "Tooka is your automation sidekick",
-	Long:    `Tooka helps you automate tasks based on a cron-like schedule using shell commands and file watchers.`,
+	Long:    `Tooka helps you automate tasks and manage your workflow.`,
 	Version: core.Version,
 }
 

@@ -14,11 +14,16 @@ var listCmd = &cobra.Command{
 	Short: "List all tasks",
 	Long:  `Lists all tasks, optionally filtered by name pattern.`,
 	Run: func(cmd *cobra.Command, args []string) {
+
+		core.Log.Info().Msg("[Tooka LIST] Listing all tasks")
+
 		// Get flags for filtering
 		namePattern, _ := cmd.Flags().GetString("name")
+		core.Log.Info().Msg("[Tooka LIST] Name pattern: " + namePattern)
 
 		// Fetch tasks
 		tasks := taskManager.ListTasks()
+		core.Log.Info().Msg("[Tooka LIST] Number of tasks: " + fmt.Sprintf("%d", len(tasks)))
 
 		// Apply filtering logic based on flags
 		var filteredTasks []*core.Task
@@ -34,6 +39,7 @@ var listCmd = &cobra.Command{
 			// If no filters apply, include the task
 			filteredTasks = append(filteredTasks, task)
 		}
+		core.Log.Info().Msg("[Tooka LIST] Number of filtered tasks: " + fmt.Sprintf("%d", len(filteredTasks)))
 
 		// Print filtered tasks in a table format
 		printTasks(filteredTasks)
