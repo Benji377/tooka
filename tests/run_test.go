@@ -16,6 +16,7 @@ func TestCLI_Run_Task(t *testing.T) {
 
 	// Set up the task file for this test
 	setup(t, taskFile, taskJSON)
+	defer teardown(t, taskFile)
 
 	// First, add the task
 	cmdAdd := exec.Command("../tooka", "add", taskFile)
@@ -24,9 +25,6 @@ func TestCLI_Run_Task(t *testing.T) {
 	// Now, run the task
 	cmdRun := exec.Command("../tooka", "run", "test-task")
 	output := runCommand(t, cmdRun)
-
-	// Clean up the task file after the test
-	teardown(t, taskFile)
 
 	// Check if the output contains the expected running message
 	if !strings.Contains(output, "Success") {
@@ -45,6 +43,7 @@ func TestCLI_Run_Quiet(t *testing.T) {
 
 	// Set up the task file for this test
 	setup(t, taskFile, taskJSON)
+	defer teardown(t, taskFile)
 
 	cmdAdd := exec.Command("../tooka", "add", taskFile)
 	runCommand(t, cmdAdd)
@@ -52,9 +51,6 @@ func TestCLI_Run_Quiet(t *testing.T) {
 	// Now, run the task
 	cmdRun := exec.Command("../tooka", "run", "test-task", "--quiet")
 	output := runCommand(t, cmdRun)
-
-	// Clean up the task file after the test
-	teardown(t, taskFile)
 
 	// Ensure no output is printed due to quiet flag
 	if len(output) > 0 {

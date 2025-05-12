@@ -1,92 +1,95 @@
 package modules
 
 import (
+	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
-	"strings"
+	"time"
 )
 
 type HTTPModule struct {
-	URL         string
-	Method      string
-	Headers     map[string]string
-	Body        string
-	ReturnType  string
+	URL     string
+	Method  string
+	Headers map[string]string
+	Payload string
+	Timeout time.Duration
 }
 
 func NewHTTPModule(config map[string]any) (Module, error) {
 	url, ok := config["url"].(string)
-	method, okMethod := config["method"].(string)
-	headers, okHeaders := config["headers"].(map[string]string)
-	body, okBody := config["body"].(string)
-	returnType, okReturn := config["return_type"].(string)
-
 	if !ok || url == "" {
-		return nil, fmt.Errorf("missing or invalid 'url' in HTTP module config")
+		return nil, fmt.Errorf("missing or invalid 'url'")
 	}
-	if !okMethod {
-		method = "GET" // Default to GET method if not specified
+
+	method := "GET"
+	if m, ok := config["method"].(string); ok {
+		method = m
 	}
-	if !okHeaders {
-		headers = make(map[string]string) // Default to empty headers
+
+	headers := map[string]string{}
+	if h, ok := config["headers"].(map[string]any); ok {
+		for k, v := range h {
+			if s, ok := v.(string); ok {
+				headers[k] = s
+			}
+		}
 	}
-	if !okBody {
-		body = "" // Default to empty body
+
+	payload := ""
+	if p, ok := config["payload"].(string); ok {
+		payload = p
 	}
-	if !okReturn {
-		returnType = "text" // Default return type to text
+
+	timeout := 5 * time.Second
+	if tStr, ok := config["timeout"].(string); ok {
+		if t, err := time.ParseDuration(tStr); err == nil {
+			timeout = t
+		}
 	}
 
 	return &HTTPModule{
-		URL:        url,
-		Method:     method,
-		Headers:    headers,
-		Body:       body,
-		ReturnType: returnType,
+		URL:     url,
+		Method:  method,
+		Headers: headers,
+		Payload: payload,
+		Timeout: timeout,
 	}, nil
 }
 
 func (m *HTTPModule) Run() string {
-	// Create a new HTTP request
-	req, err := http.NewRequest(m.Method, m.URL, strings.NewReader(m.Body))
+	client := &http.Client{Timeout: m.Timeout}
+	var body io.Reader
+	if m.Payload != "" {
+		body = bytes.NewBuffer([]byte(m.Payload))
+	}
+
+	req, err := http.NewRequest(m.Method, m.URL, body)
 	if err != nil {
-		return fmt.Sprintf("Error: %s", err.Error())
+		return fmt.Sprintf("Failed to create request: %v", err)
+	}
+	for k, v := range m.Headers {
+		req.Header.Set(k, v)
 	}
 
-	// Set headers if any
-	for key, value := range m.Headers {
-		req.Header.Set(key, value)
-	}
-
-	// Perform the HTTP request
-	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Sprintf("Error: %s", err.Error())
+		return fmt.Sprintf("Request error: %v", err)
 	}
 	defer resp.Body.Close()
 
-	// Read the response body
-	body, err := ioutil.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Sprintf("Error reading response body: %s", err.Error())
+		return fmt.Sprintf("Failed to read response: %v", err)
 	}
-
-	// Depending on the return type, process accordingly
-	if m.ReturnType == "json" {
-		// In a real-world scenario, you could attempt to unmarshal JSON here if necessary
-		return fmt.Sprintf("JSON Response: %s", string(body))
-	}
-
-	return string(body) // Return the body as text
+	return fmt.Sprintf("Status: %s\nBody: %s", resp.Status, string(respBody))
 }
 
 func init() {
 	RegisterModule(ModuleInfo{
 		Name:        "http",
-		Description: "Performs an HTTP request (GET, POST, etc.)",
-		ConfigHelp:  "Required: 'url' (string), 'method' (string), 'headers' (map[string]string), 'body' (string), 'return_type' (string)",
+		Description: "Sends an HTTP request",
+		ConfigHelp:  "Required: 'url'; Optional: 'method', 'headers', 'payload', 'timeout'",
 		Constructor: NewHTTPModule,
 	})
 }

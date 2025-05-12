@@ -3,62 +3,69 @@ package modules
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 )
 
-type DBModule struct {
-	DSN  string
-	SQL  string
+type SQLModule struct {
+	DBPath string
+	Query  string
 }
 
-func NewDBModule(config map[string]any) (Module, error) {
-	dsn, ok := config["dsn"].(string)
-	sqlQuery, okSQL := config["sql"].(string)
+func NewSQLModule(config map[string]any) (Module, error) {
+	path, ok1 := config["db"].(string)
+	query, ok2 := config["query"].(string)
 
-	if !ok || dsn == "" || !okSQL || sqlQuery == "" {
-		return nil, fmt.Errorf("missing or invalid 'dsn' (Data Source Name) or 'sql' query in database module config")
+	if !ok1 || !ok2 || path == "" || query == "" {
+		return nil, fmt.Errorf("'db' (file path) and 'query' are required for SQL module")
 	}
 
-	return &DBModule{
-		DSN: dsn,
-		SQL: sqlQuery,
+	return &SQLModule{
+		DBPath: path,
+		Query:  query,
 	}, nil
 }
 
-func (m *DBModule) Run() string {
-	// Open the database connection
-	db, err := sql.Open("sqlite3", m.DSN) // Change this to your preferred database driver
+func (m *SQLModule) Run() string {
+	db, err := sql.Open("sqlite3", m.DBPath)
 	if err != nil {
-		return fmt.Sprintf("Error: %s", err.Error())
+		return fmt.Sprintf("Failed to open DB: %v", err)
 	}
 	defer db.Close()
 
-	// Execute the SQL query
-	rows, err := db.Query(m.SQL)
+	rows, err := db.Query(m.Query)
 	if err != nil {
-		return fmt.Sprintf("Error executing SQL query: %s", err.Error())
+		return fmt.Sprintf("Query failed: %v", err)
 	}
 	defer rows.Close()
 
-	// Process query results (this example assumes a SELECT query returning columns 'id' and 'name')
-	var result string
+	cols, _ := rows.Columns()
+	var results []string
 	for rows.Next() {
-		var id int
-		var name string
-		if err := rows.Scan(&id, &name); err != nil {
-			return fmt.Sprintf("Error scanning result: %s", err.Error())
+		data := make([]any, len(cols))
+		ptrs := make([]any, len(cols))
+		for i := range data {
+			ptrs[i] = &data[i]
 		}
-		result += fmt.Sprintf("ID: %d, Name: %s\n", id, name)
+		if err := rows.Scan(ptrs...); err != nil {
+			continue
+		}
+		rowStr := ""
+		for i, val := range data {
+			rowStr += fmt.Sprintf("%s: %v  ", cols[i], val)
+		}
+		results = append(results, rowStr)
 	}
-
-	// Return any rows as a formatted string
-	return result
+	if len(results) == 0 {
+		return "No rows returned."
+	}
+	return strings.Join(results, "\n")
 }
 
 func init() {
 	RegisterModule(ModuleInfo{
-		Name:        "db",
-		Description: "Executes SQL queries against a database",
-		ConfigHelp:  "Required: 'dsn' (string), 'sql' (string)",
-		Constructor: NewDBModule,
+		Name:        "sql",
+		Description: "Executes a SQL query on a SQLite DB file",
+		ConfigHelp:  "Required: 'db' (string path), 'query' (SQL string)",
+		Constructor: NewSQLModule,
 	})
 }

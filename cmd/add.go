@@ -5,7 +5,6 @@ import (
 
 	"github.com/Benji377/tooka/internal/core"
 	"github.com/Benji377/tooka/internal/ui"
-	"github.com/Benji377/tooka/internal/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -20,11 +19,6 @@ var addCmd = &cobra.Command{
 			return
 		}
 		path := args[0]
-
-		if err := utils.ValidateTaskJSON(path); err != nil {
-			fmt.Println(ui.ErrorStyle.Render(fmt.Sprintf("Error: Invalid task JSON: %v", err)))
-			return
-		}
 
 		task, err := core.LoadTaskFromFile(path)
 		if err != nil {

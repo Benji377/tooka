@@ -13,10 +13,16 @@ import (
 type Task struct {
 	Name            string           `json:"name"`
 	Description     string           `json:"description"`
-	Modules         []map[string]any `json:"modules"`
+	Modules         []ModuleConfig   `json:"modules"`
 	Output          string           `json:"output,omitempty"`
-	CompiledModules []modules.Module // Holds loaded module instances
+	CompiledModules []modules.Module `json:"-"`
 }
+
+type ModuleConfig struct {
+	Name   string         `json:"name"`
+	Config map[string]any `json:"config"`
+}
+
 
 // LoadTaskFromFile reads a JSON file and parses it into a Task object
 func LoadTaskFromFile(path string) (*Task, error) {
@@ -30,26 +36,18 @@ func LoadTaskFromFile(path string) (*Task, error) {
 		return nil, fmt.Errorf("invalid JSON: %w", err)
 	}
 
-	// Load module implementations
-	for _, rawMod := range task.Modules {
-		modInstance, err := modules.LoadModule(mapToStringMap(rawMod))
+	for _, modCfg := range task.Modules {
+		modInstance, err := modules.LoadModule(map[string]map[string]any{
+			modCfg.Name: modCfg.Config,
+		})
 		if err != nil {
 			return nil, fmt.Errorf("error loading module: %w", err)
 		}
 		task.CompiledModules = append(task.CompiledModules, modInstance)
 	}
 
-	return &task, nil
-}
 
-func mapToStringMap(raw map[string]any) map[string]map[string]any {
-	converted := make(map[string]map[string]any)
-	for key, value := range raw {
-		if innerMap, ok := value.(map[string]any); ok {
-			converted[key] = innerMap
-		}
-	}
-	return converted
+	return &task, nil
 }
 
 // Run executes the task's module chain and optionally writes output

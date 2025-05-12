@@ -33,6 +33,7 @@ func TestCLI_List_AllTasks(t *testing.T) {
 
 	// Set up the task file for this test
 	setup(t, taskFile, taskJSON)
+	defer teardown(t, taskFile)
 
 	// First, add the task
 	cmdAdd := exec.Command("../tooka", "add", taskFile)
@@ -43,9 +44,6 @@ func TestCLI_List_AllTasks(t *testing.T) {
 
 	// Capture the output of the command
 	output, err := cmd.CombinedOutput()
-
-	// Clean up the task file after the test
-	teardown(t, taskFile)
 
 	if err != nil {
 		t.Fatalf("Failed to run the CLI command: %v", err)
@@ -67,6 +65,7 @@ func TestCLI_List_FilteredTasks(t *testing.T) {
 
 	// Set up the task file for this test
 	setup(t, taskFile, taskJSON)
+	defer teardown(t, taskFile)
 
 	// First, add the task
 	cmdAdd := exec.Command("../tooka", "add", taskFile)
@@ -77,9 +76,6 @@ func TestCLI_List_FilteredTasks(t *testing.T) {
 
 	// Capture the output of the command
 	output, err := cmd.CombinedOutput()
-
-	// Clean up the task file after the test
-	teardown(t, taskFile)
 
 	if err != nil {
 		t.Fatalf("Failed to run the CLI command: %v", err)

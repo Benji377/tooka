@@ -17,13 +17,11 @@ func TestCLI_Add_ValidTask(t *testing.T) {
 
 	// Set up the task file for this test
 	setup(t, taskFile, taskJSON)
+	defer teardown(t, taskFile)
 
 	// Run the "add" command
 	cmd := exec.Command("../tooka", "add", taskFile)
 	output := runCommand(t, cmd)
-
-	// Clean up the task file after the test
-	teardown(t, taskFile)
 
 	// Check if the output contains the expected message
 	if !strings.Contains(output, "loaded successfully") {
