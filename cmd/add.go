@@ -9,7 +9,7 @@ import (
 )
 
 var addCmd = &cobra.Command{
-	Use:   "add [task.json]",
+	Use:   "add <task-file>",
 	Short: "Add a new task",
 	Long:  "Add a task from the given JSON file",
 	Args:  cobra.ExactArgs(1),

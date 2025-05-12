@@ -18,7 +18,7 @@ var (
 )
 
 var runCmd = &cobra.Command{
-	Use:   "run [task-name...]",
+	Use:   "run <task-name...>",
 	Short: "Run one or more tasks by name",
 	Long:  "Executes one or more Tooka tasks by name, optionally writing output to a file and showing results.",
 	Args:  cobra.MinimumNArgs(1),

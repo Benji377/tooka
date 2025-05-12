@@ -14,7 +14,7 @@ var (
 )
 
 var infoCmd = &cobra.Command{
-	Use:   "info",
+	Use:   "info <task-name>",
 	Short: "Show information about a task",
 	Long:  `Retrieves metadata about a task. Use --json for raw JSON output.`,
 	Args:  cobra.ExactArgs(1),

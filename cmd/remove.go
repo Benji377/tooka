@@ -9,7 +9,7 @@ import (
 )
 
 var removeCmd = &cobra.Command{
-	Use:   "remove [name]",
+	Use:   "remove <task-name>",
 	Short: "Remove a task by name",
 	Long:  `Removes a task by its name. Use this command to delete a task from the task manager.`,
 	Args:  cobra.ExactArgs(1),
