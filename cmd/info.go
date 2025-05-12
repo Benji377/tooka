@@ -9,8 +9,7 @@ import (
 )
 
 var (
-	taskName string
-	jsonOut  bool
+	jsonOut bool
 )
 
 var infoCmd = &cobra.Command{
@@ -18,10 +17,11 @@ var infoCmd = &cobra.Command{
 	Short: "Show information about a task",
 	Long:  `Retrieves metadata about a task. Use --json for raw JSON output.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if taskName == "" {
-			fmt.Println(ui.ErrorStyle.Render("❌ Please provide a task name using --name"))
+		if len(args) < 1 {
+			fmt.Println(ui.ErrorStyle.Render("❌ Please provide a task name."))
 			return
 		}
+		taskName := args[0]
 
 		task, _ := taskManager.GetTask(taskName)
 		if task == nil {
@@ -47,6 +47,5 @@ var infoCmd = &cobra.Command{
 }
 
 func init() {
-	infoCmd.Flags().StringVarP(&taskName, "name", "n", "", "Task name")
 	infoCmd.Flags().BoolVar(&jsonOut, "json", false, "Output full JSON data")
 }
