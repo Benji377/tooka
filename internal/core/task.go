@@ -12,15 +12,11 @@ import (
 // Task defines the structure of a Tooka task loaded from JSON
 type Task struct {
 	Name            string           `json:"name"`
-	Desc            string           `json:"desc"`
-	Schedule        string           `json:"schedule"`
+	Description     string           `json:"description"`
 	Modules         []map[string]any `json:"modules"`
 	Output          string           `json:"output,omitempty"`
-	Enabled         bool             `json:"enabled"`
 	CompiledModules []modules.Module // Holds loaded module instances
-	LastRun         time.Time        `json:"last_run"` // Track last run time
 }
-
 
 // LoadTaskFromFile reads a JSON file and parses it into a Task object
 func LoadTaskFromFile(path string) (*Task, error) {
@@ -58,26 +54,29 @@ func mapToStringMap(raw map[string]any) map[string]map[string]any {
 
 // Run executes the task's module chain and optionally writes output
 func (t *Task) Run() {
-	// Execute the task modules
+	_ = t.RunLive("", false)
+}
+
+// RunLive executes the task and optionally overrides the output path
+func (t *Task) RunLive(outputOverride string, quiet bool) error {
 	var output string
 	for _, mod := range t.CompiledModules {
 		result := mod.Run()
 		output += fmt.Sprintf("[%s] %s\n", time.Now().Format(time.RFC3339), result)
 	}
 
-	// Log output if set
-	if t.Output != "" {
-		err := os.WriteFile(t.Output, []byte(output), 0644)
-		if err != nil {
-			fmt.Printf("Error writing output to %s: %v\n", t.Output, err)
-		}
-	} else {
-		fmt.Print(output)
+	finalOutputPath := t.Output
+	if outputOverride != "" {
+		finalOutputPath = outputOverride
 	}
 
-	// Update the LastRun field
-	t.LastRun = time.Now()
-
-
+	if finalOutputPath != "" {
+		err := os.WriteFile(finalOutputPath, []byte(output), 0644)
+		if err != nil {
+			return fmt.Errorf("error writing output to %s: %v", finalOutputPath, err)
+		}
+	} else if !quiet {
+		fmt.Print(output)
+	}
+	return nil
 }
-

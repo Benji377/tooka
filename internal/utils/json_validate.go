@@ -16,7 +16,7 @@ func ValidateTaskJSON(path string) error {
 
 	content := string(data)
 
-	requiredFields := []string{"name", "schedule", "modules"}
+	requiredFields := []string{"name", "description", "modules"}
 	for _, field := range requiredFields {
 		if !gjson.Get(content, field).Exists() {
 			return fmt.Errorf("missing required field: '%s'", field)

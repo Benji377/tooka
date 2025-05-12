@@ -15,7 +15,7 @@ type FileModule struct {
 	Mutex        sync.Mutex
 }
 
-func NewFileModule(config map[string]any) (*FileModule, error) {
+func NewFileModule(config map[string]any) (Module, error) {
 	path, ok1 := config["file"].(string)
 	cmd, ok2 := config["on-change"].(string)
 
@@ -54,4 +54,13 @@ func (m *FileModule) Run() string {
 	}
 
 	return "No changes detected."
+}
+
+func init() {
+	RegisterModule(ModuleInfo{
+		Name:        "file",
+		Description: "Executes a command when a file changes",
+		ConfigHelp:  "Required: 'file' (string), 'on-change' (string)",
+		Constructor: NewFileModule,
+	})
 }

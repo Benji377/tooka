@@ -9,7 +9,7 @@ type ShellModule struct {
 	Command string
 }
 
-func NewShellModule(config map[string]any) (*ShellModule, error) {
+func NewShellModule(config map[string]any) (Module, error) {
 	cmd, ok := config["command"].(string)
 	if !ok || cmd == "" {
 		return nil, fmt.Errorf("missing or invalid 'command' in shell module config")
@@ -23,4 +23,13 @@ func (m *ShellModule) Run() string {
 		return fmt.Sprintf("Error: %s", err.Error())
 	}
 	return string(out)
+}
+
+func init() {
+	RegisterModule(ModuleInfo{
+		Name:        "shell",
+		Description: "Runs a shell command",
+		ConfigHelp:  "Required: 'command' (string)",
+		Constructor: NewShellModule,
+	})
 }

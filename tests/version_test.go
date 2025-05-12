@@ -2,8 +2,8 @@ package tests
 
 import (
 	"os/exec"
-	"testing"
 	"strings"
+	"testing"
 )
 
 func TestCLI_Version(t *testing.T) {
