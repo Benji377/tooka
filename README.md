@@ -6,41 +6,90 @@
     <img src="assets/logo-banner.png" alt="Tooka Logo" style="width: 70%; max-width: 1280px; vertical-align: middle;">
 </div>
 
-## Introduction
+
 **Your Automation Sidekick**
 
-> [!CAUTION]
-> This is a Work In Progress - Don't use yet!
+---
 
-## Usage
-So basically the user uses the CLI to load and manage tasks. Tasks are defined by writing a json file that defines their name, schedule to run (cron syntax) and the modules to execute.
-Each task has to be added to a specific folder in the CLI app directory where the CLI can read them and manage them. Using the dedicated CLI command add(), a file can be added as task, which means
-that the file gets copied to the CLI app directory, renamed to be unique and then loaded into the system.
-The CLI obviously doesn't persist across reboots but it will start again on each reboot and resume execution.
+## 🧠 What is Tooka?
 
-### Task Definition
-A task is roughly defined like this:
+**Tooka** is a lightweight and modular command-line tool that lets you define and automate tasks using simple JSON files. Think of it as a customizable automation assistant: you write tasks in JSON, define their behavior using modules, and let Tooka handle execution and output—all from your terminal.
+
+Each task consists of one or more **modules**, which are executed in sequence. Modules act like plugins: reusable, composable, and easily extended.
+
+---
+
+## 🚀 Installation
+
+1. Download the appropriate binary for your operating system from the [Releases page](https://github.com/Benji377/tooka/releases).
+2. (Optional) Add it to your system's PATH for global access.
+
+> Other installation methods (e.g., Homebrew, Winget, etc.) coming soon!
+
+---
+
+## 🛠️ Usage
+
+### 1. Define a Task
+
+Create a JSON file (e.g., `test_task.json`) with your task definition:
+
 ```json
 {
-    "name": "test",
-    "schedule": "* * * * 1"
-    "modules": [
-        "shell": {
-            "command": "echo 'Hello World'"
-        },
-        "file": {
-            "file": "text.txt"
-            "on-change": "echo 'File changed'"
-        },
-        ...
-    ]
-    "output": "test_log.txt"
+  "name": "shell-task",
+  "description": "A task that runs a shell command",
+  "modules": [
+    {
+      "name": "shell",
+      "config": {
+        "command": "echo 'hello from shell'"
+      }
+    }
+  ]
 }
 ```
-Where it can have multiple modules, duplicates also, with their respective attributes. The output defines where the result of each task run should be saved.
-It will only save status updates like "Run completed" or not. To save the output of a module, do it in the module.
 
-## Future
+### 2. Add the Task
 
-- https://www.codetriage.com/
-- https://github.com/pytest-dev/pluggy
+```bash
+tooka add test_task.json
+```
+
+### 3. Run the Task
+
+```bash
+tooka run shell-task
+```
+
+🎉 Done! Tooka will execute the defined modules and output the result.
+
+> 📚 For advanced usage and task chaining, check out the [Wiki](https://github.com/Benji377/tooka/wiki).
+
+---
+
+## 🧩 Extending with Modules
+
+Modules are the building blocks of Tooka. You can think of them as plugins that define specific functionality (e.g., shell commands, HTTP requests, file processing).
+
+Want to build your own module? Check the [Contributing Guide](https://github.com/Benji377/tooka/wiki/Contributing) for how to get started.
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions of all kinds—bug fixes, documentation improvements, and especially **new modules**!
+
+Modules can be developed and maintained independently, allowing Tooka to remain lightweight and extensible.
+
+If you'd like to get involved:
+
+* Read the [Contributing Guide](https://github.com/Benji377/tooka/wiki/Contributing)
+* Submit an issue or feature request
+* Fork the repo and open a pull request
+
+---
+
+## 📄 License
+
+This project is licensed under the [GPLv3 License](LICENSE).
+
