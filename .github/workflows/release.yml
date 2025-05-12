@@ -42,8 +42,9 @@ jobs:
       - name: Upload the binaries
         uses: actions/upload-artifact@v4
         with:
-          name: tooka-${{ matrix.os }}-${{ env.VERSION }} 
-          path: tooka-${{ matrix.os }}-${{ env.VERSION }}
+          name: tooka-${{ matrix.os }}-${{ env.VERSION }}
+          path: |
+            ${{ matrix.os == 'windows-latest' && format('tooka-{0}-{1}.exe', matrix.os, env.VERSION) || format('tooka-{0}-{1}', matrix.os, env.VERSION) }}
 
   upload_to_release:
     name: Upload to GitHub release
