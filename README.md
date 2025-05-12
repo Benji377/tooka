@@ -1,5 +1,6 @@
 [![Linting](https://github.com/Benji377/tooka/actions/workflows/lint.yml/badge.svg)](https://github.com/Benji377/tooka/actions/workflows/lint.yml)
 [![Test](https://github.com/Benji377/tooka/actions/workflows/test.yml/badge.svg)](https://github.com/Benji377/tooka/actions/workflows/test.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Benji377/tooka)](https://goreportcard.com/report/github.com/Benji377/tooka)
 
 # Tooka
 <div align="center">
