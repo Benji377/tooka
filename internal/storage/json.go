@@ -29,8 +29,14 @@ func init() {
 			if err != nil {
 				panic("Failed to create task file: " + err.Error())
 			}
-			defer file.Close()
-			file.Write([]byte("[]")) // Write empty JSON array
+			defer func() {
+				if cerr := file.Close(); cerr != nil {
+					panic("Failed to close task file: " + cerr.Error())
+				}
+			}()
+			if _, werr := file.Write([]byte("[]")); werr != nil {
+				panic("Failed to write to task file: " + werr.Error())
+			} // Write empty JSON array
 		}
 	}
 

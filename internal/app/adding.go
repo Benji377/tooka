@@ -16,7 +16,10 @@ func updateAdding(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
-			storage.SaveTasks(m.tasks)
+			err := storage.SaveTasks(m.tasks)
+			if err != nil {
+				panic("Failed to save tasks: " + err.Error())
+			}
 			return m, tea.Quit
 		case "esc":
 			m.adding = false
@@ -53,7 +56,10 @@ func updateAdding(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 					Priority:    priority,
 				}
 				m.tasks = append(m.tasks, newTask)
-				storage.SaveTasks(m.tasks)
+				err := storage.SaveTasks(m.tasks)
+				if err != nil {
+					panic("Failed to save tasks: " + err.Error())
+				}
 				m.adding = false
 			}
 		}
@@ -70,7 +76,10 @@ func updateEditing(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
-			storage.SaveTasks(m.tasks)
+			err := storage.SaveTasks(m.tasks)
+			if err != nil {
+				panic("Failed to save tasks: " + err.Error())
+			}
 			return m, tea.Quit
 		case "esc":
 			m.adding = false

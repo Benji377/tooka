@@ -16,41 +16,41 @@ var (
 	yellow = lipgloss.Color("#f1fa8c")
 
 	AppStyle = lipgloss.NewStyle().
-			Padding(1, 2).
-			Background(baseBg).
-			Foreground(baseFg)
+		Padding(1, 2).
+		Background(baseBg).
+		Foreground(baseFg)
 
 	TitleStyle = lipgloss.NewStyle().
-			Bold(true).
-			Foreground(accent).
-			MarginBottom(1).
-			Align(lipgloss.Center).
-			Height(1).
-			Faint(false).
-			Italic(false).
-			Background(baseBg).
-			Padding(0, 0).
-			MarginTop(1).
-			MarginBottom(1).
-			Inherit(AppStyle).
-			Width(80)
+		Bold(true).
+		Foreground(accent).
+		MarginBottom(1).
+		Align(lipgloss.Center).
+		Height(1).
+		Faint(false).
+		Italic(false).
+		Background(baseBg).
+		Padding(0, 0).
+		MarginTop(1).
+		MarginBottom(1).
+		Inherit(AppStyle).
+		Width(80)
 
-	BigTitle = TitleStyle.Copy().Bold(true).Foreground(accent).Height(2).Align(lipgloss.Center)
+	BigTitle = TitleStyle.Bold(true).Foreground(accent).Height(2).Align(lipgloss.Center)
 
 	LabelStyle = lipgloss.NewStyle().
-			Bold(true).
-			Foreground(yellow)
+		Bold(true).
+		Foreground(yellow)
 
 	FooterStyle = lipgloss.NewStyle().
-			Foreground(accent).
-			Align(lipgloss.Center).
-			MarginTop(1)
+		Foreground(accent).
+		Align(lipgloss.Center).
+		MarginTop(1)
 
 	TaskStatusDone = lipgloss.NewStyle().
-			Foreground(green)
+		Foreground(green)
 
 	TaskStatusTodo = lipgloss.NewStyle().
-			Foreground(red)
+		Foreground(red)
 )
 
 func TaskCardStyle(t task.Task, selected bool) lipgloss.Style {
