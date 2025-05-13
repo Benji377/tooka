@@ -19,6 +19,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 
 	case tea.KeyMsg:
+		// 🔒 Ignore global shortcuts when typing into inputs
+		if m.adding && m.inputs[m.inputIndex].Focused() {
+			return updateAdding(m, msg)
+		}
+		if m.editing && m.editingInputs[m.inputIndex].Focused() {
+			return updateEditing(m, msg)
+		}
+
 		switch msg.String() {
 		case "ctrl+c", "q":
 			storage.SaveTasks(m.tasks)
@@ -60,7 +68,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				t := &m.tasks[m.cursor]
 				t.Title = m.editingInputs[0].Value()
 				t.Description = m.editingInputs[1].Value()
-				due, _ := time.Parse("2006-01-02", m.editingInputs[2].Value())
+				due, _ := time.Parse("2006-01-02 15:04", m.editingInputs[2].Value())
 				t.DueDate = due
 				storage.SaveTasks(m.tasks)
 				m.viewingTask = true
@@ -88,7 +96,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.inputIndex = 0
 				m.editingInputs[0].SetValue(t.Title)
 				m.editingInputs[1].SetValue(t.Description)
-				m.editingInputs[2].SetValue(t.DueDate.Format("2006-01-02"))
+				m.editingInputs[2].SetValue(t.DueDate.Format("2006-01-02 15:04"))
 				m.editingInputs[0].Focus()
 			}
 
@@ -109,6 +117,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if !m.adding && !m.viewingTask && m.cursor < len(m.tasks)-1 {
 				m.cursor++
 			}
+
+		case "s":
+			m.sortMode = (m.sortMode + 1) % 3
+			m.sortTasks()
 
 		case "d":
 			if !m.adding && !m.viewingTask && len(m.tasks) > 0 {

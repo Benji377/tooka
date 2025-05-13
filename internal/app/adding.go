@@ -3,9 +3,9 @@ package app
 import (
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/Benji377/tooka/internal/task"
 	"github.com/Benji377/tooka/internal/storage"
+	"github.com/Benji377/tooka/internal/task"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 func updateAdding(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -15,15 +15,33 @@ func updateAdding(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "tab":
+		case "ctrl+c", "q":
+			storage.SaveTasks(m.tasks)
+			return m, tea.Quit
+		case "esc":
+			m.adding = false
+		case "tab", "down":
 			m.inputs, m.inputIndex = updateInputNavigation(m.inputs, m.inputIndex, true)
-		case "shift+tab":
+		case "shift+tab", "up":
 			m.inputs, m.inputIndex = updateInputNavigation(m.inputs, m.inputIndex, false)
 		case "enter":
 			if m.inputIndex == len(m.inputs)-1 {
 				title := m.inputs[0].Value()
 				desc := m.inputs[1].Value()
 				due, _ := time.Parse("2006-01-02 15:04", m.inputs[2].Value())
+				priorityInput := m.inputs[3].Value()
+
+				var priority task.Priority
+				switch priorityInput {
+				case "low":
+					priority = task.Low
+				case "medium":
+					priority = task.Medium
+				case "severe":
+					priority = task.Severe
+				default:
+					priority = task.Low // Default to low if no valid input
+				}
 
 				newTask := task.Task{
 					ID:          len(m.tasks) + 1,
@@ -32,6 +50,7 @@ func updateAdding(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 					DueDate:     due,
 					CreatedAt:   time.Now(),
 					Completed:   false,
+					Priority:    priority,
 				}
 				m.tasks = append(m.tasks, newTask)
 				storage.SaveTasks(m.tasks)
@@ -50,9 +69,14 @@ func updateEditing(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "tab":
+		case "ctrl+c", "q":
+			storage.SaveTasks(m.tasks)
+			return m, tea.Quit
+		case "esc":
+			m.adding = false
+		case "tab", "down":
 			m.editingInputs, m.inputIndex = updateInputNavigation(m.editingInputs, m.inputIndex, true)
-		case "shift+tab":
+		case "shift+tab", "up":
 			m.editingInputs, m.inputIndex = updateInputNavigation(m.editingInputs, m.inputIndex, false)
 		case "enter":
 			if m.inputIndex == len(m.editingInputs)-1 {
@@ -61,6 +85,17 @@ func updateEditing(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 				t.Description = m.editingInputs[1].Value()
 				due, _ := time.Parse("2006-01-02 15:04", m.editingInputs[2].Value())
 				t.DueDate = due
+				priorityInput := m.editingInputs[3].Value()
+				switch priorityInput {
+				case "low":
+					t.Priority = task.Low
+				case "medium":
+					t.Priority = task.Medium
+				case "severe":
+					t.Priority = task.Severe
+				default:
+					t.Priority = task.Low // Default to low if no valid input
+				}
 				storage.SaveTasks(m.tasks)
 				m.viewedTask = *t
 				m.editing = false

@@ -1,10 +1,10 @@
 package main
 
 import (
-    "log"
+	"log"
 
-    tea "github.com/charmbracelet/bubbletea"
-    "github.com/Benji377/tooka/internal/app"
+	"github.com/Benji377/tooka/internal/app"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 func main() {

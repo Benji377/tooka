@@ -1,9 +1,20 @@
 package app
 
 import (
-	"github.com/Benji377/tooka/internal/task"
+	"sort"
+	"strings"
+
 	"github.com/Benji377/tooka/internal/storage"
+	"github.com/Benji377/tooka/internal/task"
 	"github.com/charmbracelet/bubbles/textinput"
+)
+
+type SortMode int
+
+const (
+	SortByDueDate SortMode = iota
+	SortByName
+	SortByPriority
 )
 
 type model struct {
@@ -16,8 +27,10 @@ type model struct {
 	cursor        int
 	viewingTask   bool
 	viewedTask    task.Task
+	sortMode      SortMode
 	width         int
 	height        int
+	offset        int
 }
 
 var placeholders = []string{
@@ -56,7 +69,6 @@ func InitialModel() model {
 	}
 }
 
-
 func (m model) View() string {
 	// If we're adding or editing a task, show the input form
 	if m.adding || m.editing {
@@ -70,4 +82,23 @@ func (m model) View() string {
 
 	// Otherwise, show the task list
 	return viewTaskList(m)
+}
+
+func (m *model) sortTasks() {
+	switch m.sortMode {
+	case SortByName:
+		sort.Slice(m.tasks, func(i, j int) bool {
+			return strings.ToLower(m.tasks[i].Title) < strings.ToLower(m.tasks[j].Title)
+		})
+	case SortByPriority:
+		sort.Slice(m.tasks, func(i, j int) bool {
+			return m.tasks[i].Priority > m.tasks[j].Priority
+		})
+	case SortByDueDate:
+		fallthrough
+	default:
+		sort.Slice(m.tasks, func(i, j int) bool {
+			return m.tasks[i].DueDate.Before(m.tasks[j].DueDate)
+		})
+	}
 }
