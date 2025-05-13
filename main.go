@@ -1,16 +1,15 @@
 package main
 
 import (
-	"log"
+    "log"
 
-	"github.com/Benji377/tooka/cmd"
-	"github.com/Benji377/tooka/internal/core"
+    tea "github.com/charmbracelet/bubbletea"
+    "github.com/Benji377/tooka/internal/app"
 )
 
 func main() {
-	// Initialize the logger
-	core.InitLogger()
-	if err := cmd.Execute(); err != nil {
-		log.Fatalf("Error executing Tooka CLI: %v", err)
+	p := tea.NewProgram(app.InitialModel(), tea.WithAltScreen())
+	if _, err := p.Run(); err != nil {
+		log.Fatalf("Error running Tooka: %v", err)
 	}
 }
