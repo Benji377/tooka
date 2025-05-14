@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 )
 
-var Version string = "1.0.0"
+var Version string = "1.0.1"
 
 func GetTasksFilePath() string {
 	home, err := os.UserHomeDir()
