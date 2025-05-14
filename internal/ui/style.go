@@ -2,6 +2,7 @@ package ui
 
 import "github.com/charmbracelet/lipgloss"
 
+// Base colors
 var (
 	baseFg = lipgloss.Color("#f8f8f2")
 	baseBg = lipgloss.Color("#282a36")
@@ -11,62 +12,83 @@ var (
 	yellow = lipgloss.Color("#f1fa8c")
 )
 
+// General styles
 var (
 	AppStyle = lipgloss.NewStyle().
-			Padding(1, 2).
-			Background(baseBg).
-			Foreground(baseFg)
+		Padding(1, 2).
+		Background(baseBg).
+		Foreground(baseFg)
 
 	TitleStyle = lipgloss.NewStyle().
-			Bold(true).
-			Foreground(accent).
-			MarginBottom(1).
-			Align(lipgloss.Center).
-			Height(1).
-			Faint(false).
-			Italic(false).
-			Background(baseBg).
-			Padding(0, 0).
-			MarginTop(1).
-			MarginBottom(1).
-			Inherit(AppStyle).
-			Width(80)
+		Bold(true).
+		Foreground(accent).
+		Align(lipgloss.Center).
+		Background(baseBg)
 
-	BigTitle = TitleStyle.Copy().Bold(true).Foreground(accent).Height(2).Align(lipgloss.Center)
+	BigTitle = TitleStyle.Copy().
+		Height(2)
 
 	LabelStyle = lipgloss.NewStyle().
-			Bold(true).
-			Foreground(yellow)
+		Bold(true).
+		Foreground(yellow)
 
 	FooterStyle = lipgloss.NewStyle().
-			Foreground(accent).
-			Align(lipgloss.Center).
-			MarginTop(1)
+		Foreground(accent).
+		Align(lipgloss.Center).
+		MarginTop(1)
 
 	TaskStatusDone = lipgloss.NewStyle().
-			Foreground(green)
+		Foreground(green)
 
 	TaskStatusTodo = lipgloss.NewStyle().
-			Foreground(red)
+		Foreground(red)
 )
 
+// Pane and selection styles
+var (
+	SelectedTaskStyle = lipgloss.NewStyle().
+		Foreground(baseFg).
+		Background(lipgloss.Color("#44475a")).
+		Bold(true)
 
-var headerStyle = lipgloss.NewStyle().
-	Foreground(lipgloss.Color("#00FFCC")).
-	Background(lipgloss.Color("#222222")).
-	Padding(1, 0).
-	Align(lipgloss.Center).
-	Bold(true)
+	LeftPaneStyle = lipgloss.NewStyle().
+		Background(lipgloss.Color("#1e1f29")).
+		Padding(0, 1)
 
-var dividerStyle = lipgloss.NewStyle().
-	Foreground(lipgloss.Color("#444444"))
+	RightPaneStyle = lipgloss.NewStyle().
+		Background(lipgloss.Color("#1c1c1c")).
+		Padding(0, 1)
+)
 
-var sortInfoStyle = lipgloss.NewStyle().
-	Foreground(lipgloss.Color("241")).
-	Italic(true).
-	MarginBottom(1)
+// Status styles
+var (
+	OverdueStyle  = lipgloss.NewStyle().Foreground(red)
+	UpcomingStyle = lipgloss.NewStyle().Foreground(yellow)
+	FutureStyle   = lipgloss.NewStyle().Foreground(green)
+)
 
-var helpStyle = lipgloss.NewStyle().
-	Foreground(lipgloss.Color("240")).
-	Padding(0, 1).
-	Align(lipgloss.Center)
+// Miscellaneous styles
+var (
+	DividerGradient = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#6272a4"))
+
+	HeaderStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#00FFCC")).
+		Background(lipgloss.Color("#222222")).
+		Padding(1, 0).
+		Align(lipgloss.Center).
+		Bold(true)
+
+	DividerStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#444444"))
+
+	SortInfoStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("241")).
+		Italic(true).
+		MarginBottom(1)
+
+	HelpStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("240")).
+		Padding(0, 1).
+		Align(lipgloss.Center)
+)

@@ -23,7 +23,7 @@ type model struct {
 	width, height int
 	taskManager   *core.TaskManager
 	cursor        int
-	inputs	      []textinput.Model
+	inputs        []textinput.Model
 	editingInputs []textinput.Model
 	adding        bool
 	editing       bool
@@ -53,13 +53,13 @@ func New(taskManager *core.TaskManager) tea.Model {
 	}
 
 	return &model{
-		taskManager: taskManager,
+		taskManager:   taskManager,
 		inputs:        createInputs(),
 		editingInputs: createInputs(),
 		inputIndex:    0,
 		cursor:        0,
-		sortBy:      SortByDueDate,
-		sortDir:     Asc,
+		sortBy:        SortByDueDate,
+		sortDir:       Asc,
 	}
 }
 

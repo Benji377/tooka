@@ -74,7 +74,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "s":
 			m.toggleSort()
-		
+
 		case "d":
 			m.toggleSortDirection()
 		}
@@ -87,7 +87,6 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.editing {
 		return updateEditing(m, msg)
 	}
-
 
 	return m, nil
 }
@@ -114,9 +113,9 @@ func (m *model) toggleSortDirection() {
 }
 
 func clearTerminal() {
-	cmd := exec.Command("clear")  // For Unix-like systems (Linux, macOS)
+	cmd := exec.Command("clear") // For Unix-like systems (Linux, macOS)
 	if os.Getenv("OS") == "Windows_NT" {
-		cmd = exec.Command("cmd", "/c", "cls")  // For Windows
+		cmd = exec.Command("cmd", "/c", "cls") // For Windows
 	}
 	cmd.Stdout = os.Stdout
 	cmd.Run()

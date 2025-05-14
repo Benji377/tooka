@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Benji377/tooka/internal/core"
 	"github.com/charmbracelet/lipgloss"
@@ -19,36 +20,59 @@ func (m *model) defaultView() string {
 		tasks = reversed
 	}
 
-	header := headerStyle.Render("Tooka")
-	divider := dividerStyle.Render(strings.Repeat("─", m.width))
-	footer := helpStyle.Render("a: Add  e: Edit  r: Remove  s: Sort  d: Sort Direction  space: Toggle complete")
+	header := TitleStyle.Width(m.width).Render(`
+  _____           _         
+ |_   _|__   ___ | | ____ _ 
+   | |/ _ \ / _ \| |/ / _' |
+   | | (_) | (_) |   < (_| |
+   |_|\___/ \___/|_|\_\__,_|
+	`)
+	divider := DividerGradient.Render(strings.Repeat("─", m.width))
+	footer := HelpStyle.Render("a: Add  e: Edit  r: Remove  s: Sort  d: Sort Direction  space: Toggle complete")
 
 	leftWidth := m.width / 2
 	rightWidth := m.width - leftWidth - 1 // -1 for the vertical divider
 
 	// Sorting info
-	sortInfo := sortInfoStyle.Render(fmt.Sprintf("Sorting: %s | Direction: %s", m.sortBy, m.sortDir))
+	sortInfo := SortInfoStyle.Render(fmt.Sprintf("Sorting: %s | Direction: %s", m.sortBy, m.sortDir))
 
 	// Left pane (tasks)
 	var taskList strings.Builder
 	taskList.WriteString(sortInfo + "\n")
 
+	now := time.Now()
+
 	for i, task := range tasks {
 		cursor := " "
+		lineStyle := lipgloss.NewStyle()
 		if i == m.cursor {
 			cursor = ">"
+			lineStyle = SelectedTaskStyle
 		}
+
 		checkbox := "[ ]"
 		if task.Completed {
 			checkbox = "[x]"
 		}
+
 		title := truncate(task.Title, leftWidth-30)
-		due := task.DueDate.Format("2006-01-02")
-		line := fmt.Sprintf("%s %s %-20s %s\n", cursor, checkbox, title, lipgloss.NewStyle().Align(lipgloss.Right).Width(10).Render(due))
-		taskList.WriteString(line)
+
+		dueStyle := FutureStyle
+		if task.DueDate.Before(now) && !task.Completed {
+			dueStyle = OverdueStyle
+		} else if task.DueDate.Before(now.AddDate(0, 0, 7)) {
+			dueStyle = UpcomingStyle
+		}
+
+		due := dueStyle.Render(task.DueDate.Format("2006-01-02"))
+		line := fmt.Sprintf("%s %s %-20s %s", cursor, checkbox, title, due)
+
+		// Render padded line to the full width
+		padded := lipgloss.NewStyle().Width(leftWidth).Render(line)
+		taskList.WriteString(lineStyle.Render(padded) + "\n")
 	}
 
-	leftPane := lipgloss.NewStyle().Width(leftWidth).Render(taskList.String())
+	leftPane := LeftPaneStyle.Width(leftWidth).Height(minHeight).Render(taskList.String())
 
 	// Right pane (task detail)
 	var detail string
@@ -63,12 +87,21 @@ func (m *model) defaultView() string {
 			t.Description,
 		)
 	}
-	rightPane := lipgloss.NewStyle().Width(rightWidth).PaddingLeft(1).Render(detail)
+	rightPane := RightPaneStyle.Width(rightWidth).Height(minHeight).Render(detail)
+
+	var vDividerBuilder strings.Builder
+	for i := 0; i < minHeight; i++ {
+		vDividerBuilder.WriteString("│\n")
+	}
+	vDivider := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("240")).
+		Render(strings.TrimRight(vDividerBuilder.String(), "\n"))
+
 
 	// Combine panes
 	body := lipgloss.JoinHorizontal(lipgloss.Top,
 		leftPane,
-		lipgloss.NewStyle().Width(1).Foreground(lipgloss.Color("240")).Render("│"),
+		vDivider,
 		rightPane,
 	)
 

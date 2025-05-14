@@ -20,8 +20,6 @@ func (m *model) View() string {
 	return m.defaultView()
 }
 
-
-
 func truncate(s string, max int) string {
 	if max <= 3 {
 		if max <= 0 {
