@@ -74,6 +74,9 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "s":
 			m.toggleSort()
+		
+		case "d":
+			m.toggleSortDirection()
 		}
 	}
 
@@ -100,6 +103,9 @@ func (m *model) toggleSort() {
 	case SortByState:
 		m.sortBy = SortByTitle
 	}
+}
+
+func (m *model) toggleSortDirection() {
 	if m.sortDir == Asc {
 		m.sortDir = Desc
 	} else {

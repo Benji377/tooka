@@ -21,7 +21,7 @@ func (m *model) defaultView() string {
 
 	header := headerStyle.Render("Tooka")
 	divider := dividerStyle.Render(strings.Repeat("─", m.width))
-	footer := helpStyle.Render("a: Add  e: Edit  r: Remove  s: Sort  space: Toggle complete")
+	footer := helpStyle.Render("a: Add  e: Edit  r: Remove  s: Sort  d: Sort Direction  space: Toggle complete")
 
 	leftWidth := m.width / 2
 	rightWidth := m.width - leftWidth - 1 // -1 for the vertical divider
