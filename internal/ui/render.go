@@ -7,12 +7,14 @@ import (
 	"time"
 
 	"github.com/Benji377/tooka/internal/core"
+	"github.com/Benji377/tooka/internal/shared"
 	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/term"
 )
 
 func RenderTaskList(tasks []core.Task) string {
 	if len(tasks) == 0 {
+		shared.Log.Info().Msg("No tasks found to render") // Info log when there are no tasks
 		return ErrorStyle.Render("No tasks found.")
 	}
 
@@ -22,6 +24,8 @@ func RenderTaskList(tasks []core.Task) string {
 		width = 100
 	}
 	cardWidth := max(width-10, 60)
+
+	shared.Log.Debug().Int("width", width).Int("card_width", cardWidth).Msg("Rendering task list") // Debug log for terminal size
 
 	var b strings.Builder
 	for _, task := range tasks {
@@ -88,12 +92,17 @@ func RenderTaskList(tasks []core.Task) string {
 		// Combining card header, body, and styling
 		card := cardStyle.Render(body)
 		b.WriteString(card + "\n")
+
+		shared.Log.Debug().Int("task_id", task.ID).Str("status", statusText).Msg("Rendered task card") // Debug log for task rendering
 	}
+
 	return b.String()
 }
 
 func RenderTaskDetails(task core.Task) string {
 	var b strings.Builder
+
+	shared.Log.Debug().Int("task_id", task.ID).Msg("Rendering task details") // Debug log for task details
 
 	b.WriteString(TitleStyle.Render(task.Title) + "\n")
 	b.WriteString(fmt.Sprintf("%s %s\n", LabelStyle.Render("ID:"), IDStyle.Render(fmt.Sprintf("%d", task.ID))))
@@ -102,6 +111,7 @@ func RenderTaskDetails(task core.Task) string {
 	b.WriteString(fmt.Sprintf("%s %s\n", LabelStyle.Render("Priority:"), stylePriority(task.Priority)))
 	b.WriteString(fmt.Sprintf("%s\n%s\n", LabelStyle.Render("Description:"), ValueStyle.Render(task.Description)))
 
+	shared.Log.Debug().Str("task_title", task.Title).Msg("Rendered task details view") // Debug log after rendering task details
 	return b.String()
 }
 

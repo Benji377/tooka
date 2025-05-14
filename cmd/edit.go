@@ -2,10 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
 	"github.com/Benji377/tooka/internal/core"
+	"github.com/Benji377/tooka/internal/shared"
 	"github.com/Benji377/tooka/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -24,30 +26,32 @@ var editCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		id, err := strconv.Atoi(args[0])
 		if err != nil {
+			log.Println("Error parsing task ID:", err) // Using log for user-facing error
 			return fmt.Errorf("invalid ID")
 		}
 
 		manager, err := core.NewTaskManager()
 		if err != nil {
+			log.Println("Error initializing task manager:", err) // Using log for user-facing error
 			return err
 		}
 
 		task, err := manager.Get(id)
 		if err != nil {
+			log.Println("Error fetching task by ID:", err) // Using log for user-facing error
 			return err
 		}
 
 		// Prompt interactively if no fields are provided
 		if newTitle == "" && newDescription == "" && newDue == "" && newPriority == -1 {
-			// Pre-fill with the existing task values
-			fmt.Println("No fields provided. Launching interactive editor...")
-			inputTask, err := ui.PromptForTask(task) // Pass existing task to pre-fill fields
+			shared.Log.Debug().Msg("Launching interactive editor to update task") // Log for debug
+			inputTask, err := ui.PromptForTask(task)                              // Pass existing task to pre-fill fields
 			if err != nil {
 				if err.Error() == "cancelled" {
-					// If the user pressed ESC or canceled, just exit gracefully
-					fmt.Println("Interactive editor canceled.")
-					return nil // Gracefully exit
+					log.Println("Interactive editor canceled.") // Use log for user-facing message
+					return nil                                  // Gracefully exit
 				}
+				shared.Log.Error().Err(err).Msg("Error while prompting for task update") // Log error details
 				return err
 			}
 			task.Title = inputTask.Title
@@ -76,9 +80,11 @@ var editCmd = &cobra.Command{
 		// Save the updated task
 		err = manager.Edit(id, *task)
 		if err != nil {
+			shared.Log.Error().Err(err).Msg("Error updating task") // Log error details
 			return err
 		}
 
+		shared.Log.Info().Msgf("Task #%d updated", id) // Log success
 		fmt.Printf("Task #%d updated.\n", id)
 		return nil
 	},

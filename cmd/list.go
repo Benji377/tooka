@@ -2,11 +2,13 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/Benji377/tooka/internal/core"
+	"github.com/Benji377/tooka/internal/shared"
 	"github.com/Benji377/tooka/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -22,12 +24,15 @@ var listCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		manager, err := core.NewTaskManager()
 		if err != nil {
+			log.Println("Error initializing task manager:", err) // Using log for console error
 			return err
 		}
 
 		tasks := manager.List()
-		sortTasks(tasks, sortFlag, descFlag)
+		shared.Log.Debug().Int("task_count", len(tasks)).Msg("Retrieved task list") // Debug log for the number of tasks
 
+		sortTasks(tasks, sortFlag, descFlag)
+		shared.Log.Debug().Msg("Rendering sorted task list") // Debug log for sorting tasks
 		fmt.Println(ui.RenderTaskList(tasks))
 		return nil
 	},

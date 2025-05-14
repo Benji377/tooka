@@ -1,13 +1,13 @@
 package shared
 
 import (
-	"os"
-
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/natefinch/lumberjack.v2"
+	"os"
 )
 
+// Global logger variable
 var Log zerolog.Logger
 
 func InitLogger() {
@@ -22,14 +22,15 @@ func InitLogger() {
 
 	logFilePath := logsDir + "/tooka_log.json"
 
+	// Set up lumberjack for log rotation
 	logFile := &lumberjack.Logger{
 		Filename:   logFilePath,
-		MaxSize:    10, // megabytes
+		MaxSize:    10, // MB
 		MaxBackups: 7,
-		MaxAge:     28,   //days
-		Compress:   true, // disabled by default
+		MaxAge:     28, // days
+		Compress:   true,
 	}
 
-	log.Logger = zerolog.New(logFile).With().Timestamp().Logger()
-	Log = log.Logger
+	// Initialize the logger for file output
+	Log = zerolog.New(logFile).With().Timestamp().Logger()
 }
