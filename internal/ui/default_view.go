@@ -27,16 +27,16 @@ func (m *model) defaultView() string {
    | | (_) | (_) |   < (_| |
    |_|\___/ \___/|_|\_\__,_|
 	`)
+
 	divider := DividerGradient.Render(strings.Repeat("─", m.width))
 	footer := HelpStyle.Render("a: Add  e: Edit  r: Remove  s: Sort  d: Sort Direction  space: Toggle complete")
 
 	leftWidth := m.width / 2
-	rightWidth := m.width - leftWidth - 1 // -1 for the vertical divider
+	rightWidth := m.width - leftWidth - 1
 
-	// Sorting info
 	sortInfo := SortInfoStyle.Render(fmt.Sprintf("Sorting: %s | Direction: %s", m.sortBy, m.sortDir))
 
-	// Left pane (tasks)
+	// LEFT PANE: TASK LIST
 	var taskList strings.Builder
 	taskList.WriteString(sortInfo + "\n")
 
@@ -66,29 +66,59 @@ func (m *model) defaultView() string {
 
 		due := dueStyle.Render(task.DueDate.Format("2006-01-02"))
 		line := fmt.Sprintf("%s %s %-20s %s", cursor, checkbox, title, due)
-
-		// Render padded line to the full width
 		padded := lipgloss.NewStyle().Width(leftWidth).Render(line)
 		taskList.WriteString(lineStyle.Render(padded) + "\n")
 	}
 
-	leftPane := LeftPaneStyle.Width(leftWidth).Height(minHeight).Render(taskList.String())
+	leftPane := LeftPaneStyle.
+		Width(leftWidth).
+		Height(minHeight).
+		Render(taskList.String())
 
-	// Right pane (task detail)
-	var detail string
+	// RIGHT PANE: TASK DETAILS
+	var rightPaneContent string
+	bg := lipgloss.Color("#1c1c1c")
+	fieldStyle := lipgloss.NewStyle().Foreground(baseFg).Background(bg)
+	lineStyle := lipgloss.NewStyle().Width(rightWidth).Background(bg)
+
 	if m.cursor < len(tasks) {
 		t := tasks[m.cursor]
-		detail = fmt.Sprintf(
-			"Title: %s\nDue: %s\nPriority: %s\nState: %s\n\n%s",
-			t.Title,
-			t.DueDate.Format("2006-01-02"),
-			t.Priority,
-			boolToState(t.Completed),
-			t.Description,
-		)
-	}
-	rightPane := RightPaneStyle.Width(rightWidth).Height(minHeight).Render(detail)
+		var lines []string
 
+		lines = append(lines, lineStyle.Render(LabelStyle.Copy().Background(bg).Render("Title: ")+fieldStyle.Render(t.Title)))
+		lines = append(lines, lineStyle.Render(LabelStyle.Copy().Background(bg).Render("Due: ")+FutureStyle.Copy().Background(bg).Render(t.DueDate.Format("2006-01-02"))))
+		lines = append(lines, lineStyle.Render(LabelStyle.Copy().Background(bg).Render("Priority: ")+fieldStyle.Render(fmt.Sprintf("%v", t.Priority))))
+		stateStyle := TaskStatusTodo.Copy().Background(bg)
+		if t.Completed {
+			stateStyle = TaskStatusDone.Copy().Background(bg)
+		}
+		lines = append(lines, lineStyle.Render(LabelStyle.Copy().Background(bg).Render("State: ")+stateStyle.Render(boolToState(t.Completed))))
+
+		if t.Description != "" {
+			lines = append(lines, lineStyle.Render(" ")) // Spacer line
+			lines = append(lines, lineStyle.Render(LabelStyle.Copy().Background(bg).Render("Description:")))
+			descLines := strings.Split(t.Description, "\n")
+			for _, l := range descLines {
+				lines = append(lines, lineStyle.Render(fieldStyle.Render(l)))
+			}
+		}
+
+		rightPaneContent = lipgloss.JoinVertical(lipgloss.Left, lines...)
+	} else {
+		rightPaneContent = lipgloss.NewStyle().
+			Italic(true).
+			Foreground(lipgloss.Color("240")).
+			Width(rightWidth).
+			Background(bg).
+			Render("No task selected.")
+	}
+
+	rightPane := RightPaneStyle.
+		Width(rightWidth).
+		Height(minHeight).
+		Render(rightPaneContent)
+
+	// DIVIDER
 	var vDividerBuilder strings.Builder
 	for i := 0; i < minHeight; i++ {
 		vDividerBuilder.WriteString("│\n")
@@ -97,8 +127,7 @@ func (m *model) defaultView() string {
 		Foreground(lipgloss.Color("240")).
 		Render(strings.TrimRight(vDividerBuilder.String(), "\n"))
 
-
-	// Combine panes
+	// FINAL LAYOUT
 	body := lipgloss.JoinHorizontal(lipgloss.Top,
 		leftPane,
 		vDivider,

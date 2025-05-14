@@ -14,9 +14,6 @@ func updateAdding(m *model, msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c", "q":
-			core.SaveTasks(m.taskManager.List())
-			return m, tea.Quit
 		case "esc":
 			m.adding = false
 		case "tab", "down":
@@ -67,11 +64,8 @@ func updateEditing(m *model, msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c", "q":
-			core.SaveTasks(m.taskManager.List())
-			return m, tea.Quit
 		case "esc":
-			m.adding = false
+			m.editing = false
 		case "tab", "down":
 			m.editingInputs, m.inputIndex = updateInputNavigation(m.editingInputs, m.inputIndex, true)
 		case "shift+tab", "up":

@@ -22,20 +22,39 @@ func viewAddingOrEditing(m model) string {
 		BorderForeground(accent).
 		Padding(1, 2).
 		Width(formWidth).
-		Align(lipgloss.Left)
+		Align(lipgloss.Left).
+		Background(baseBg) // Ensure background is set here
 
-	content := strings.Builder{}
-	content.WriteString(BigTitle.Width(formWidth).Render(title) + "\n\n")
+	// Consistent base style for all internal lines
+	lineStyle := lipgloss.NewStyle().
+		Width(formWidth).
+		Background(baseBg).
+		Foreground(baseFg)
 
+	var lines []string
+
+	// Title
+	lines = append(lines, BigTitle.Width(formWidth).Render(title))
+	lines = append(lines, "") // blank line
+
+	// Inputs
 	for i, input := range inputs {
-		label := LabelStyle.Render(placeholders[i])
-		content.WriteString(label + "\n")
-		content.WriteString(input.View() + "\n\n")
+		label := LabelStyle.Width(formWidth).Render(placeholders[i])
+		inputLine := lineStyle.Render(input.View())
+
+		lines = append(lines, label)
+		lines = append(lines, inputLine)
+		lines = append(lines, "") // spacing after input
 	}
 
+	// Footer
 	footer := FooterStyle.Width(formWidth).Render("[Tab] Next • [Shift+Tab] Prev • [Enter] Confirm • [Esc] Cancel")
-	content.WriteString(footer)
+	lines = append(lines, footer)
 
-	formView := formContainer.Render(content.String())
+	// Join all and render inside form container
+	content := strings.Join(lines, "\n")
+	formView := formContainer.Render(content)
+
+	// Wrap in app-level container
 	return AppStyle.Width(m.width).Align(lipgloss.Center).Render(formView)
 }
