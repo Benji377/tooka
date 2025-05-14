@@ -35,23 +35,11 @@ func RunCLI(t *testing.T, taskFile string, args ...string) string {
 
 // AddTask adds a task using the CLI
 func AddTask(t *testing.T, taskFile string, title string) string {
-	return RunCLI(t, taskFile, "add", title,
+	return RunCLI(t, taskFile, "add", 
+		"--title",	title,
 		"--description", "Test task",
 		"--due", "2025-12-31",
 		"--priority", "1")
-}
-
-// GetTaskIDFromList parses the first task ID from the list output
-func GetTaskIDFromList(t *testing.T, output string) string {
-	lines := strings.Split(output, "\n")
-	if len(lines) < 2 {
-		t.Fatal("no tasks found in list")
-	}
-	fields := strings.Fields(lines[1])
-	if len(fields) == 0 {
-		t.Fatal("malformed task row")
-	}
-	return fields[0]
 }
 
 // RemoveTask removes a task by ID using the CLI

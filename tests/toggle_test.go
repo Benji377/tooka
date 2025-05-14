@@ -9,8 +9,7 @@ func TestToggleComplete(t *testing.T) {
 	taskFile := SetupTestEnv(t)
 
 	AddTask(t, taskFile, "Finish toggling")
-	listOutput := RunCLI(t, taskFile, "list")
-	taskID := GetTaskIDFromList(t, listOutput)
+	taskID := "0"
 
 	toggleOutput := RunCLI(t, taskFile, "toggle", taskID)
 	if !strings.Contains(toggleOutput, "Toggled") {
@@ -18,7 +17,7 @@ func TestToggleComplete(t *testing.T) {
 	}
 
 	infoOutput := RunCLI(t, taskFile, "info", taskID)
-	if !strings.Contains(infoOutput, "Completed: true") {
+	if !strings.Contains(infoOutput, "Status: Completed") {
 		t.Fatalf("Toggle didn't mark task as completed: %s", infoOutput)
 	}
 

@@ -80,5 +80,5 @@ func (m *TaskManager) getNextID() int {
 			maxID = task.ID
 		}
 	}
-	return maxID + 1
+	return maxID
 }

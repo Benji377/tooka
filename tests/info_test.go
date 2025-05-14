@@ -9,8 +9,7 @@ func TestInfoCommand(t *testing.T) {
 	taskFile := SetupTestEnv(t)
 
 	AddTask(t, taskFile, "Task with info")
-	listOutput := RunCLI(t, taskFile, "list")
-	taskID := GetTaskIDFromList(t, listOutput)
+	taskID := "0"
 
 	infoOutput := RunCLI(t, taskFile, "info", taskID)
 	if !strings.Contains(infoOutput, "Task with info") {

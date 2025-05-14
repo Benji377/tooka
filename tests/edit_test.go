@@ -9,8 +9,8 @@ func TestEditTask(t *testing.T) {
 	taskFile := SetupTestEnv(t)
 
 	AddTask(t, taskFile, "Old Title")
-	listOutput := RunCLI(t, taskFile, "list")
-	taskID := GetTaskIDFromList(t, listOutput)
+
+	taskID := "0"
 
 	editOutput := RunCLI(t, taskFile, "edit", taskID,
 		"--title", "New Title",

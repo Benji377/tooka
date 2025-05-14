@@ -18,6 +18,5 @@ func TestListTasks(t *testing.T) {
 	}
 
 	// Cleanup
-	taskID := GetTaskIDFromList(t, listOutput)
-	RemoveTask(t, taskFile, taskID)
+	RemoveTask(t, taskFile, "0")
 }

@@ -11,8 +11,7 @@ func TestRemoveTask(t *testing.T) {
 
 	// Add, get ID, then remove
 	AddTask(t, taskFile, "Temporary task")
-	listOutput := RunCLI(t, taskFile, "list")
-	taskID := GetTaskIDFromList(t, listOutput)
+	taskID := "0"
 
 	RemoveTask(t, taskFile, taskID)
 

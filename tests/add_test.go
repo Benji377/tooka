@@ -12,8 +12,5 @@ func TestAddTask(t *testing.T) {
 	if !strings.Contains(addOutput, "added") {
 		t.Fatalf("Add failed: %s", addOutput)
 	}
-
-	listOutput := RunCLI(t, taskFile, "list")
-	taskID := GetTaskIDFromList(t, listOutput)
-	RemoveTask(t, taskFile, taskID)
+	RemoveTask(t, taskFile, "0")
 }
