@@ -29,11 +29,13 @@ var addCmd = &cobra.Command{
 
 		// Use interactive prompt if required fields aren't provided
 		if title == "" || dueDate == "" {
-			task, err = ui.PromptForTask()
+			// Launch interactive UI to fill the fields
+			task, err = ui.PromptForTask(nil) // Passing nil because there's no existing task
 			if err != nil {
 				return err
 			}
 		} else {
+			// Create a task from the provided fields
 			due, err := time.Parse("2006-01-02", dueDate)
 			if err != nil {
 				return fmt.Errorf("invalid due date format, use YYYY-MM-DD")
@@ -46,6 +48,7 @@ var addCmd = &cobra.Command{
 			}
 		}
 
+		// Save the newly added task
 		if err := manager.Add(*task); err != nil {
 			return err
 		}

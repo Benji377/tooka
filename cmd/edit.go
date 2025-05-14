@@ -37,10 +37,11 @@ var editCmd = &cobra.Command{
 			return err
 		}
 
-		// Prompt interactively if nothing is provided
+		// Prompt interactively if no fields are provided
 		if newTitle == "" && newDescription == "" && newDue == "" && newPriority == -1 {
+			// Pre-fill with the existing task values
 			fmt.Println("No fields provided. Launching interactive editor...")
-			inputTask, err := ui.PromptForTask()
+			inputTask, err := ui.PromptForTask(task) // Pass existing task to pre-fill fields
 			if err != nil {
 				return err
 			}
@@ -49,6 +50,7 @@ var editCmd = &cobra.Command{
 			task.DueDate = inputTask.DueDate
 			task.Priority = inputTask.Priority
 		} else {
+			// Only update the fields provided
 			if newTitle != "" {
 				task.Title = newTitle
 			}
@@ -66,6 +68,7 @@ var editCmd = &cobra.Command{
 			}
 		}
 
+		// Save the updated task
 		err = manager.Edit(id, *task)
 		if err != nil {
 			return err

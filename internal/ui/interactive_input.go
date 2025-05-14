@@ -17,21 +17,36 @@ type taskFormModel struct {
 	done      chan struct{}
 }
 
-func initialTaskFormModel() taskFormModel {
-	fields := []string{"Title", "Description", "Due Date (YYYY-MM-DD)", "Priority (0=Low, 1=Medium, 2=Severe)"}
+func initialTaskFormModel(existing *core.Task) taskFormModel {
+	fields := []string{
+		"Title",
+		"Description",
+		"Due Date (YYYY-MM-DD)",
+		"Priority (0=Low, 1=Medium, 2=Severe)",
+	}
 	inputs := make([]textinput.Model, len(fields))
+
+	var defaults []string
+	if existing != nil {
+		defaults = []string{
+			existing.Title,
+			existing.Description,
+			existing.DueDate.Format("2006-01-02"),
+			fmt.Sprintf("%d", existing.Priority),
+		}
+	} else {
+		defaults = []string{"", "", "", ""}
+	}
 
 	for i, placeholder := range fields {
 		ti := textinput.New()
 		ti.Placeholder = placeholder
-		ti.Focus()
+		ti.SetValue(defaults[i])
 		ti.CharLimit = 100
 		ti.Width = 40
 
 		if i == 0 {
 			ti.Focus()
-		} else {
-			ti.Blur()
 		}
 
 		inputs[i] = ti
@@ -103,8 +118,8 @@ func (m taskFormModel) View() string {
 	return s
 }
 
-func PromptForTask() (*core.Task, error) {
-	m := initialTaskFormModel()
+func PromptForTask(existing *core.Task) (*core.Task, error) {
+	m := initialTaskFormModel(existing)
 	p := tea.NewProgram(m)
 	finalModel, err := p.Run()
 	if err != nil {
@@ -143,5 +158,6 @@ func PromptForTask() (*core.Task, error) {
 		Description: desc,
 		DueDate:     due,
 		Priority:    core.Priority(priority),
+		Completed:   existing != nil && existing.Completed,
 	}, nil
 }
