@@ -27,10 +27,10 @@ func RenderTaskList(tasks []core.Task) string {
 	for _, task := range tasks {
 		// Status styles
 		var statusStyle lipgloss.Style
-		statusText := "Todo"
 		now := time.Now()
 		due := task.DueDate
 
+		var statusText string
 		if task.Completed {
 			statusStyle = CompletedStyle
 			statusText = "Completed"

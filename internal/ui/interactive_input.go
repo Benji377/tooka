@@ -150,7 +150,9 @@ func PromptForTask(existing *core.Task) (*core.Task, error) {
 
 	priority := 0
 	if prioRaw != "" {
-		fmt.Sscanf(prioRaw, "%d", &priority)
+		if _, err := fmt.Sscanf(prioRaw, "%d", &priority); err != nil {
+			return nil, fmt.Errorf("invalid priority")
+		}
 	}
 
 	return &core.Task{
