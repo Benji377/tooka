@@ -74,11 +74,5 @@ func (m *TaskManager) ToggleComplete(id int) error {
 }
 
 func (m *TaskManager) getNextID() int {
-	maxID := 0
-	for _, task := range m.tasks {
-		if task.ID > maxID {
-			maxID = task.ID
-		}
-	}
-	return maxID
+	return len(m.tasks)
 }

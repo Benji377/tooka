@@ -5,7 +5,6 @@ import (
 	"testing"
 )
 
-
 func TestListTasks(t *testing.T) {
 	taskFile := SetupTestEnv(t)
 

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/spf13/cobra"
 	"github.com/Benji377/tooka/internal/core"
+	"github.com/spf13/cobra"
 )
 
 var removeCmd = &cobra.Command{

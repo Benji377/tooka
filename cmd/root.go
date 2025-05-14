@@ -5,9 +5,9 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use: "tooka",
-	Short: "Tooka is a task management tool",
-	Long: "Tooka is a task management tool that helps you manage your tasks efficiently.",
+	Use:     "tooka",
+	Short:   "Tooka is a task management tool",
+	Long:    "Tooka is a task management tool that helps you manage your tasks efficiently.",
 	Version: "0.1.0",
 }
 

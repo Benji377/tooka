@@ -5,7 +5,6 @@ import (
 	"testing"
 )
 
-
 func TestRemoveTask(t *testing.T) {
 	taskFile := SetupTestEnv(t)
 

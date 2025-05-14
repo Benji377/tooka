@@ -35,8 +35,8 @@ func RunCLI(t *testing.T, taskFile string, args ...string) string {
 
 // AddTask adds a task using the CLI
 func AddTask(t *testing.T, taskFile string, title string) string {
-	return RunCLI(t, taskFile, "add", 
-		"--title",	title,
+	return RunCLI(t, taskFile, "add",
+		"--title", title,
 		"--description", "Test task",
 		"--due", "2025-12-31",
 		"--priority", "1")
