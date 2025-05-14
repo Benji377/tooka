@@ -85,18 +85,18 @@ func (m *model) defaultView() string {
 		t := tasks[m.cursor]
 		var lines []string
 
-		lines = append(lines, lineStyle.Render(LabelStyle.Copy().Background(bg).Render("Title: ")+fieldStyle.Render(t.Title)))
-		lines = append(lines, lineStyle.Render(LabelStyle.Copy().Background(bg).Render("Due: ")+FutureStyle.Copy().Background(bg).Render(t.DueDate.Format("2006-01-02"))))
-		lines = append(lines, lineStyle.Render(LabelStyle.Copy().Background(bg).Render("Priority: ")+fieldStyle.Render(fmt.Sprintf("%v", t.Priority))))
-		stateStyle := TaskStatusTodo.Copy().Background(bg)
+		lines = append(lines, lineStyle.Render(LabelStyle.Background(bg).Render("Title: ")+fieldStyle.Render(t.Title)))
+		lines = append(lines, lineStyle.Render(LabelStyle.Background(bg).Render("Due: ")+FutureStyle.Background(bg).Render(t.DueDate.Format("2006-01-02"))))
+		lines = append(lines, lineStyle.Render(LabelStyle.Background(bg).Render("Priority: ")+fieldStyle.Render(fmt.Sprintf("%v", t.Priority))))
+		stateStyle := TaskStatusTodo.Background(bg)
 		if t.Completed {
-			stateStyle = TaskStatusDone.Copy().Background(bg)
+			stateStyle = TaskStatusDone.Background(bg)
 		}
-		lines = append(lines, lineStyle.Render(LabelStyle.Copy().Background(bg).Render("State: ")+stateStyle.Render(boolToState(t.Completed))))
+		lines = append(lines, lineStyle.Render(LabelStyle.Background(bg).Render("State: ")+stateStyle.Render(boolToState(t.Completed))))
 
 		if t.Description != "" {
 			lines = append(lines, lineStyle.Render(" ")) // Spacer line
-			lines = append(lines, lineStyle.Render(LabelStyle.Copy().Background(bg).Render("Description:")))
+			lines = append(lines, lineStyle.Render(LabelStyle.Background(bg).Render("Description:")))
 			descLines := strings.Split(t.Description, "\n")
 			for _, l := range descLines {
 				lines = append(lines, lineStyle.Render(fieldStyle.Render(l)))

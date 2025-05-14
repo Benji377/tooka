@@ -1,9 +1,11 @@
 package ui
 
 import (
+	"os"
 	"time"
 
 	"github.com/Benji377/tooka/internal/core"
+	"github.com/Benji377/tooka/internal/shared"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -48,7 +50,12 @@ func updateAdding(m *model, msg tea.Msg) (tea.Model, tea.Cmd) {
 					Completed:   false,
 					Priority:    priority,
 				}
-				m.taskManager.Add(newTask)
+				err := m.taskManager.Add(newTask)
+				if err != nil {
+					shared.Log.Err(err).Msg("Failed to add task")
+					os.Exit(1)
+				}
+
 				m.adding = false
 			}
 		}
@@ -91,8 +98,17 @@ func updateEditing(m *model, msg tea.Msg) (tea.Model, tea.Cmd) {
 						t.Priority = core.Low // Default to low if no valid input
 					}
 					// Update the task in the task manager
-					m.taskManager.Edit(m.cursor, *t)
-					core.SaveTasks(m.taskManager.List())
+					err := m.taskManager.Edit(m.cursor, *t)
+					if err != nil {
+						shared.Log.Err(err).Msg("Failed to edit task")
+						// Exit the program completely
+						os.Exit(1)
+					}
+					err = core.SaveTasks(m.taskManager.List())
+					if err != nil {
+						shared.Log.Err(err).Msg("Failed to save tasks")
+						os.Exit(1)
+					}
 				}
 				m.editing = false
 			}

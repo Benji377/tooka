@@ -6,6 +6,7 @@ import (
 	"os/exec"
 
 	"github.com/Benji377/tooka/internal/core"
+	"github.com/Benji377/tooka/internal/shared"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -32,7 +33,11 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c", "q":
 			clearTerminal()
-			core.SaveTasks(m.taskManager.List())
+			err := core.SaveTasks(m.taskManager.List())
+			if err != nil {
+				shared.Log.Err(err).Msg("Failed to save tasks")
+				os.Exit(1)
+			}
 			return m, tea.Quit
 		case "up", "k":
 			if m.cursor > 0 {
@@ -66,11 +71,15 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "r":
 			if !m.adding && len(m.taskManager.List()) > 0 {
 				tasks := m.taskManager.List()
-				m.taskManager.Remove(tasks[m.cursor].ID)
+				_ = m.taskManager.Remove(tasks[m.cursor].ID)
 				if m.cursor > 0 {
 					m.cursor--
 				}
-				core.SaveTasks(m.taskManager.List())
+				err := core.SaveTasks(m.taskManager.List())
+				if err != nil {
+					shared.Log.Err(err).Msg("Failed to save tasks")
+					os.Exit(1)
+				}
 			}
 		case "s":
 			m.toggleSort()
@@ -118,7 +127,11 @@ func clearTerminal() {
 		cmd = exec.Command("cmd", "/c", "cls") // For Windows
 	}
 	cmd.Stdout = os.Stdout
-	cmd.Run()
+	err := cmd.Run()
+	if err != nil {
+		shared.Log.Err(err).Msg("Failed to clear terminal")
+		os.Exit(1)
+	}
 }
 
 func updateInputNavigation(inputs []textinput.Model, index int, forward bool) ([]textinput.Model, int) {
