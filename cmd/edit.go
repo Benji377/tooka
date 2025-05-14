@@ -43,6 +43,11 @@ var editCmd = &cobra.Command{
 			fmt.Println("No fields provided. Launching interactive editor...")
 			inputTask, err := ui.PromptForTask(task) // Pass existing task to pre-fill fields
 			if err != nil {
+				if err.Error() == "cancelled" {
+					// If the user pressed ESC or canceled, just exit gracefully
+					fmt.Println("Interactive editor canceled.")
+					return nil // Gracefully exit
+				}
 				return err
 			}
 			task.Title = inputTask.Title

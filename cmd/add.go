@@ -32,6 +32,11 @@ var addCmd = &cobra.Command{
 			// Launch interactive UI to fill the fields
 			task, err = ui.PromptForTask(nil) // Passing nil because there's no existing task
 			if err != nil {
+				if err.Error() == "cancelled" {
+					// If the user pressed ESC or canceled, just exit gracefully
+					fmt.Println("Interactive editor canceled.")
+					return nil // Gracefully exit
+				}
 				return err
 			}
 		} else {
