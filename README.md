@@ -8,7 +8,6 @@
 </div>
 
 
-
 ---
 
 **Tooka** – _"Your tasks, your way. Organize, manage, and conquer!"_
