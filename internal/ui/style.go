@@ -27,7 +27,7 @@ var (
 		Align(lipgloss.Center).
 		MarginBottom(1)
 
-	BigTitle = TitleStyle.Copy().Height(2)
+	BigTitle = TitleStyle.Height(2)
 
 	LabelStyle = lipgloss.NewStyle().
 		Bold(true).
