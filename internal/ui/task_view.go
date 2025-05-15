@@ -55,6 +55,9 @@ func viewAddingOrEditing(m model) string {
 	content := strings.Join(lines, "\n")
 	formView := formContainer.Render(content)
 
-	// Wrap in app-level container
-	return AppStyle.Width(m.width).Align(lipgloss.Center).Render(formView)
+	return lipgloss.Place(
+		m.width, m.height,
+		lipgloss.Center, lipgloss.Center,
+		formView,
+	)
 }

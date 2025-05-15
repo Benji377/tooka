@@ -33,6 +33,7 @@ func (m *model) defaultView() string {
 
 	leftWidth := m.width / 2
 	rightWidth := m.width - leftWidth - 1
+	usableHeight := m.height - 12
 
 	sortInfo := SortInfoStyle.Render(fmt.Sprintf("Sorting: %s | Direction: %s", m.sortBy, m.sortDir))
 
@@ -72,7 +73,7 @@ func (m *model) defaultView() string {
 
 	leftPane := LeftPaneStyle.
 		Width(leftWidth).
-		Height(minHeight).
+		Height(usableHeight).
 		Render(taskList.String())
 
 	// RIGHT PANE: TASK DETAILS
@@ -97,8 +98,8 @@ func (m *model) defaultView() string {
 		if t.Description != "" {
 			lines = append(lines, lineStyle.Render(" ")) // Spacer line
 			lines = append(lines, lineStyle.Render(LabelStyle.Background(bg).Render("Description:")))
-			descLines := strings.Split(t.Description, "\n")
-			for _, l := range descLines {
+			descLines := strings.SplitSeq(t.Description, "\n")
+			for l := range descLines {
 				lines = append(lines, lineStyle.Render(fieldStyle.Render(l)))
 			}
 		}
@@ -115,12 +116,12 @@ func (m *model) defaultView() string {
 
 	rightPane := RightPaneStyle.
 		Width(rightWidth).
-		Height(minHeight).
+		Height(usableHeight).
 		Render(rightPaneContent)
 
 	// DIVIDER
 	var vDividerBuilder strings.Builder
-	for i := 0; i < minHeight; i++ {
+	for range usableHeight {
 		vDividerBuilder.WriteString("│\n")
 	}
 	vDivider := lipgloss.NewStyle().
