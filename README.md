@@ -1,5 +1,4 @@
 [![Linting](https://github.com/Benji377/tooka/actions/workflows/lint.yml/badge.svg)](https://github.com/Benji377/tooka/actions/workflows/lint.yml)
-[![Open Source Helpers](https://www.codetriage.com/benji377/tooka/badges/users.svg)](https://www.codetriage.com/benji377/tooka)
 [![Go Report Card](https://goreportcard.com/badge/github.com/Benji377/tooka)](https://goreportcard.com/report/github.com/Benji377/tooka)
 
 # Tooka
