@@ -43,13 +43,13 @@ This project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By participatin
 
 ### Reporting Bugs
 
-Before creating a bug report, please check the [existing issues](https://github.com/tooka-org/tooka/issues) to avoid duplicates.
+Before creating a bug report, please check the [existing issues](https://github.com/Benji377/tooka/issues) to avoid duplicates.
 
 When filing a bug report, use the bug report template and include:
 - A clear description of the issue
 - Steps to reproduce the behavior
 - Expected vs. actual behavior
-- Logs (see [wiki](https://github.com/tooka-org/tooka/wiki/Configuration) for log location)
+- Logs (see [wiki](https://github.com/Benji377/tooka/wiki/Configuration) for log location)
 - Your environment (OS, terminal, version)
 
 ### Suggesting Features
@@ -60,7 +60,7 @@ Feature requests are welcome! Please use the feature request template and:
 - Consider alternative approaches
 - Provide any additional context
 
-For larger features, consider opening a [discussion](https://github.com/tooka-org/tooka/discussions) first to gather feedback.
+For larger features, consider opening a [discussion](https://github.com/Benji377/tooka/discussions) first to gather feedback.
 
 ### Improving Documentation
 
@@ -184,7 +184,7 @@ Add support for custom date formats
    ```
 
 6. **Open a Pull Request:**
-   - Go to the [Tooka repository](https://github.com/tooka-org/tooka)
+   - Go to the [Tooka repository](https://github.com/Benji377/tooka)
    - Click "New Pull Request"
    - Select your fork and branch
    - Fill out the PR template
@@ -201,16 +201,14 @@ Add support for custom date formats
 
 ## Community
 
-- **Discussions:** [GitHub Discussions](https://github.com/tooka-org/tooka/discussions)
-- **Issues:** [GitHub Issues](https://github.com/tooka-org/tooka/issues)
-- **Quick Feedback:** [Feedback Form](https://tally.so/r/mBVyLe)
+- **Discussions:** [GitHub Discussions](https://github.com/Benji377/tooka/discussions)
+- **Issues:** [GitHub Issues](https://github.com/Benji377/tooka/issues)
 
 ## Questions?
 
 If you have questions about contributing, feel free to:
-- Open a [discussion](https://github.com/tooka-org/tooka/discussions)
+- Open a [discussion](https://github.com/Benji377/tooka/discussions)
 - Ask in an existing issue
-- Submit the [feedback form](https://tally.so/r/mBVyLe)
 
 ---
 
