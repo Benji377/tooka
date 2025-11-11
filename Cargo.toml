@@ -77,30 +77,30 @@ generate-desktop-entry = false
 [package.metadata.packager.appimage.files]
 "README.md" = "usr/share/doc/tooka/README.md"
 "LICENSE" = "usr/share/doc/tooka/LICENSE"
-"data/io.github.tooka_org.tooka.desktop" = "usr/share/applications/io.github.benji377.tooka.desktop"
-"data/io.github.tooka_org.tooka.svg" = "usr/share/icons/hicolor/scalable/apps/io.github.benji377.tooka.svg"
-"data/io.github.tooka_org.tooka.metainfo.xml" = "usr/share/metainfo/io.github.benji377.tooka.appdata.xml"
+"data/io.github.benji377.tooka.desktop" = "usr/share/applications/io.github.benji377.tooka.desktop"
+"data/io.github.benji377.tooka.svg" = "usr/share/icons/hicolor/scalable/apps/io.github.benji377.tooka.svg"
+"data/io.github.benji377.tooka.metainfo.xml" = "usr/share/metainfo/io.github.benji377.tooka.appdata.xml"
 
 [package.metadata.packager.deb.files]
 "README.md" = "usr/share/doc/tooka/README.md"
 "LICENSE" = "usr/share/doc/tooka/LICENSE"
-"data/io.github.tooka_org.tooka.desktop" = "usr/share/applications/io.github.benji377.tooka.desktop"
-"data/io.github.tooka_org.tooka.svg" = "usr/share/icons/hicolor/scalable/apps/io.github.benji377.tooka.svg"
-"data/io.github.tooka_org.tooka.metainfo.xml" = "usr/share/metainfo/io.github.benji377.tooka.metainfo.xml"
+"data/io.github.benji377.tooka.desktop" = "usr/share/applications/io.github.benji377.tooka.desktop"
+"data/io.github.benji377.tooka.svg" = "usr/share/icons/hicolor/scalable/apps/io.github.benji377.tooka.svg"
+"data/io.github.benji377.tooka.metainfo.xml" = "usr/share/metainfo/io.github.benji377.tooka.metainfo.xml"
 
 [package.metadata.packager.pacman.files]
 "README.md" = "usr/share/doc/tooka/README.md"
 "LICENSE" = "usr/share/doc/tooka/LICENSE"
-"data/io.github.tooka_org.tooka.desktop" = "usr/share/applications/io.github.benji377.tooka.desktop"
-"data/io.github.tooka_org.tooka.svg" = "usr/share/icons/hicolor/scalable/apps/io.github.benji377.tooka.svg"
-"data/io.github.tooka_org.tooka.metainfo.xml" = "usr/share/metainfo/io.github.benji377.tooka.metainfo.xml"
+"data/io.github.benji377.tooka.desktop" = "usr/share/applications/io.github.benji377.tooka.desktop"
+"data/io.github.benji377.tooka.svg" = "usr/share/icons/hicolor/scalable/apps/io.github.benji377.tooka.svg"
+"data/io.github.benji377.tooka.metainfo.xml" = "usr/share/metainfo/io.github.benji377.tooka.metainfo.xml"
 
 [package.metadata.generate-rpm]
 assets = [
     { source = "target/release/tooka", dest = "/usr/bin/tooka", mode = "0755" },
     { source = "LICENSE", dest = "/usr/share/doc/tooka/LICENSE", doc = true, mode = "0644" },
     { source = "README.md", dest = "/usr/share/doc/tooka/README.md", doc = true, mode = "0644" },
-    { source = "data/io.github.tooka_org.tooka.desktop", dest = "/usr/share/applications/io.github.benji377.tooka.desktop", mode = "0644" },
-    { source = "data/io.github.tooka_org.tooka.svg", dest = "/usr/share/icons/hicolor/scalable/apps/io.github.benji377.tooka.svg", mode = "0644" },
-    { source = "data/io.github.tooka_org.tooka.metainfo.xml", dest = "/usr/share/metainfo/io.github.benji377.tooka.metainfo.xml", mode = "0644" }
+    { source = "data/io.github.benji377.tooka.desktop", dest = "/usr/share/applications/io.github.benji377.tooka.desktop", mode = "0644" },
+    { source = "data/io.github.benji377.tooka.svg", dest = "/usr/share/icons/hicolor/scalable/apps/io.github.benji377.tooka.svg", mode = "0644" },
+    { source = "data/io.github.benji377.tooka.metainfo.xml", dest = "/usr/share/metainfo/io.github.benji377.tooka.metainfo.xml", mode = "0644" }
 ]

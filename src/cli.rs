@@ -22,7 +22,7 @@ pub fn show_banner() {
     );
     println!(
         "{}",
-        "Visit https://github.com/tooka-org/tooka for documentation".bright_blue()
+    "Visit https://github.com/benji377/tooka for documentation".bright_blue()
     );
     println!();
 }
@@ -89,7 +89,7 @@ pub fn show_version() {
     println!(
         "{} {}",
         "Repository:".bright_white(),
-        "https://github.com/tooka-org/tooka".blue()
+    "https://github.com/benji377/tooka".blue()
     );
     println!(
         "{} {}",

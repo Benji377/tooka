@@ -36,7 +36,7 @@ This project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By participatin
    ```
 3. Add the upstream repository:
    ```bash
-   git remote add upstream https://github.com/tooka-org/tooka.git
+   git remote add upstream https://github.com/benji377/tooka.git
    ```
 
 ## How to Contribute
