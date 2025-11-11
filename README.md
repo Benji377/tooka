@@ -1,12 +1,10 @@
 # 🗂️ Tooka
 
-[![clippy]](https://github.com/tooka-org/tooka/actions/workflows/clippy.yml)
-[![test]](https://github.com/tooka-org/tooka/actions/workflows/test.yml)
-[![feedback]](https://tally.so/r/mBVyLe)
+[![clippy]](https://github.com/Benji377/tooka/actions/workflows/clippy.yml)
+[![test]](https://github.com/Benji377/tooka/actions/workflows/test.yml)
 
-[clippy]: https://img.shields.io/github/actions/workflow/status/tooka-org/tooka/clippy.yml?label=Clippy&logo=rust&style=for-the-badge&labelColor=555555
-[test]: https://img.shields.io/github/actions/workflow/status/tooka-org/tooka/test.yml?label=Tests&logo=githubactions&style=for-the-badge&labelColor=555555
-[feedback]: https://img.shields.io/badge/feedback-Tally-blueviolet?style=for-the-badge&labelColor=555555&logo=googleforms
+[clippy]: https://img.shields.io/github/actions/workflow/status/Benji377/tooka/clippy.yml?label=Clippy&logo=rust&style=for-the-badge&labelColor=555555
+[test]: https://img.shields.io/github/actions/workflow/status/Benji377/tooka/test.yml?label=Tests&logo=githubactions&style=for-the-badge&labelColor=555555
 
 <div align="center">
   <img src="./assets/logo-banner.png" alt="Tooka logo" style="width: 80%">
@@ -58,16 +56,15 @@ We welcome contributions! Please see:
 
 - [Contributing Guidelines](CONTRIBUTING.md) 
 - [Code of Conduct](CODE_OF_CONDUCT.md)
-- [GitHub Discussions](https://github.com/tooka-org/tooka/discussions) for ideas and questions
+- [GitHub Discussions](https://github.com/Benji377/tooka/discussions) for ideas and questions
 
 ---
 
 ## 💬 Community & Support
 
-- **Bug Reports**: [GitHub Issues](https://github.com/tooka-org/tooka/issues)
-- **Feature Requests**: [GitHub Discussions](https://github.com/tooka-org/tooka/discussions)
-- **Quick Feedback**: [Feedback Form](https://tally.so/r/mBVyLe) (no account needed)
-- **Documentation**: [Wiki](https://github.com/tooka-org/tooka/wiki)
+- **Bug Reports**: [GitHub Issues](https://github.com/Benji377/tooka/issues)
+- **Feature Requests**: [GitHub Discussions](https://github.com/Benji377/tooka/discussions)
+- **Documentation**: [Wiki](https://github.com/Benji377/tooka/wiki)
 
 ---
 
