@@ -19,12 +19,12 @@ With a minimal CLI interface, Tooka enables automated file handling through filt
 
     <launchable type="desktop-id">io.github.benji377.tooka.desktop</launchable>
 
-    <url type="homepage">https://tooka.deno.dev/</url>
+    <url type="homepage">https://github.com/benji377/tooka</url>
     <url type="bugtracker">https://github.com/benji377/tooka/issues</url>
     <url type="donation">https://github.com/sponsors/Benji377</url>
-    <url type="vcs-browser">https://github.com/benji377</url>
-    <url type="contribute">https://github.com/benji377/discussions</url>
-    <url type="contact">https://github.com/benji377/discussions</url>
+    <url type="vcs-browser">https://github.com/Benji377/tooka</url>
+    <url type="contribute">https://github.com/Benji377/tooka/discussions</url>
+    <url type="contact">https://github.com/Benji377/tooka/discussions</url>
 
     <screenshots>
         <screenshot type="default">
