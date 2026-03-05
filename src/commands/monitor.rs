@@ -119,7 +119,7 @@ fn run_daemon_command(args: &DaemonArgs) -> Result<()> {
 }
 
 fn add_folder(args: &AddMonitorArgs) -> Result<()> {
-    cli::info(&format!("📁 Adding folder to monitoring: {}", args.path));
+    cli::info(&format!("Adding folder to monitoring: {}", args.path));
 
     let path = PathBuf::from(&args.path);
     let rule_filter = args.rules.as_ref().map(|r| {
@@ -148,7 +148,7 @@ fn add_folder(args: &AddMonitorArgs) -> Result<()> {
 
 fn remove_folder(args: &RemoveMonitorArgs) -> Result<()> {
     cli::info(&format!(
-        "🗑️  Removing folder from monitoring: {}",
+        "Removing folder from monitoring: {}",
         args.path
     ));
 
@@ -364,7 +364,7 @@ fn run_folder_sort(
 ) -> Result<()> {
     let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S");
     cli::info(&format!(
-        "[{}] 🚀 Sorting folder: {}",
+        "[{}] Sorting folder: {}",
         timestamp,
         folder.path.display()
     ));
@@ -409,7 +409,7 @@ fn run_folder_sort(
         Ok(results) => {
             let files_processed = results.len();
             cli::success(&format!(
-                "[{}] ✓ Sorted {} file(s) in {}",
+                "[{}] Sorted {} file(s) in {}",
                 timestamp,
                 files_processed,
                 folder.path.display()

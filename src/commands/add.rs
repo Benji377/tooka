@@ -78,17 +78,17 @@ pub fn run(args: &AddArgs) -> Result<()> {
 
             match rf.add_rule_from_file(&file_path_str, args.overwrite) {
                 Ok(()) => {
-                    cli::success(&format!("  ✅ Added rules from: {file_name}"));
+                    cli::success(&format!("  Added rules from: {file_name}"));
                     log::info!("Successfully added rules from: {file_path_str}");
                     added_count += 1;
                 }
                 Err(e) => {
                     if e.to_string().contains("already exists") && !args.overwrite {
-                        cli::warning(&format!("  ⚠️  Skipped (rule exists): {file_name}"));
+                        cli::warning(&format!("  Skipped (rule exists): {file_name}"));
                         log::warn!("Skipped file due to existing rule: {file_path_str}");
                         skipped_count += 1;
                     } else {
-                        cli::error(&format!("  ❌ Failed to add from: {file_name} - {e}"));
+                        cli::error(&format!("  Failed to add from: {file_name} - {e}"));
                         log::error!("Failed to add rules from: {file_path_str} - {e}");
                         failed_count += 1;
                     }

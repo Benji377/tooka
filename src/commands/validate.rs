@@ -1,3 +1,4 @@
+use crate::cli;
 use crate::rules::rule::Rule;
 use anyhow::Result;
 use clap::Args;
@@ -29,7 +30,7 @@ pub fn run(args: &ValidateArgs) -> Result<()> {
     println!("Loaded {} rules from file: {}", rules.len(), args.file);
 
     if !args.deep {
-        println!("✅ File is structurally valid (schema match)");
+        cli::success("File is structurally valid (schema match)");
         return Ok(());
     }
 
@@ -38,11 +39,11 @@ pub fn run(args: &ValidateArgs) -> Result<()> {
     for rule in rules {
         if let Err(e) = rule.validate(true) {
             log::error!("Rule '{}' is invalid: {}", rule.name, e);
-            println!("❌ Rule '{}' is invalid: {}", rule.name, e);
+            cli::error(&format!("Rule '{}' is invalid: {}", rule.name, e));
             err_count += 1;
         } else {
             log::info!("Rule '{}' is valid", rule.name);
-            println!("✅ Rule '{}' is valid", rule.name);
+            cli::success(&format!("Rule '{}' is valid", rule.name));
         }
     }
 
@@ -56,7 +57,7 @@ pub fn run(args: &ValidateArgs) -> Result<()> {
     }
 
     log::info!("All rules are valid");
-    println!("✅ All rules are valid");
+    cli::success("All rules are valid");
 
     Ok(())
 }
