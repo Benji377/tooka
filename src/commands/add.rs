@@ -73,22 +73,25 @@ pub fn run(args: &AddArgs) -> Result<()> {
 
         for file_path in yaml_files {
             let file_path_str = file_path.to_string_lossy();
-            let file_name = file_path.file_name().unwrap().to_string_lossy();
+            let file_name = file_path
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_else(|| "<unknown>".to_string());
             log::info!("Processing file: {file_path_str}");
 
             match rf.add_rule_from_file(&file_path_str, args.overwrite) {
                 Ok(()) => {
-                    cli::success(&format!("  ✅ Added rules from: {file_name}"));
+                    cli::success(&format!("  Added rules from: {file_name}"));
                     log::info!("Successfully added rules from: {file_path_str}");
                     added_count += 1;
                 }
                 Err(e) => {
                     if e.to_string().contains("already exists") && !args.overwrite {
-                        cli::warning(&format!("  ⚠️  Skipped (rule exists): {file_name}"));
+                        cli::warning(&format!("  Skipped (rule exists): {file_name}"));
                         log::warn!("Skipped file due to existing rule: {file_path_str}");
                         skipped_count += 1;
                     } else {
-                        cli::error(&format!("  ❌ Failed to add from: {file_name} - {e}"));
+                        cli::error(&format!("  Failed to add from: {file_name} - {e}"));
                         log::error!("Failed to add rules from: {file_path_str} - {e}");
                         failed_count += 1;
                     }

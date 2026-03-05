@@ -239,7 +239,10 @@ where
         }
         Some('~') => {
             log::debug!("Destination is a home directory path: {to}");
-            let home_dir = std::env::home_dir().unwrap_or_else(|| std::env::current_dir().unwrap());
+            let home_dir = directories_next::UserDirs::new()
+                .map(|dirs| dirs.home_dir().to_path_buf())
+                .or_else(|| std::env::var("HOME").ok().map(PathBuf::from))
+                .unwrap_or_else(|| PathBuf::from("/"));
             let stripped = to.trim_start_matches('~').trim_start_matches('/');
             home_dir.join(stripped)
         }

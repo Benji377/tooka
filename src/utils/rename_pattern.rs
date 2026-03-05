@@ -53,15 +53,19 @@ fn apply_filters(value: String, filters: &[&str]) -> String {
     let mut val = value;
     for filter in filters {
         if let Some(fmt) = filter.strip_prefix("date:") {
-            let parsed = DateTime::parse_from_rfc3339(&val)
+            // Try RFC3339 first
+            let datetime = DateTime::parse_from_rfc3339(&val)
+                .ok()
                 .map(|dt| dt.with_timezone(&Local))
-                .or_else(|_| {
+                .or_else(|| {
+                    // Try EXIF format
                     NaiveDateTime::parse_from_str(&val, "%Y:%m:%d %H:%M:%S")
-                        .map(|dt| Local.from_local_datetime(&dt).unwrap())
+                        .ok()
+                        .and_then(|dt| Local.from_local_datetime(&dt).single())
                 });
 
-            if let Ok(datetime) = parsed {
-                val = datetime.format(fmt).to_string();
+            if let Some(dt) = datetime {
+                val = dt.format(fmt).to_string();
             }
         }
     }

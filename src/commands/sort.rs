@@ -133,7 +133,12 @@ pub fn run(args: SortArgs) -> Result<()> {
     if let Some(report_type) = &args.report {
         log::info!("Generating report of type: {report_type}");
         let output_dir = args.output.as_ref().map_or_else(
-            || std::env::current_dir().expect("Cannot get current working directory"),
+            || {
+                std::env::current_dir().unwrap_or_else(|_| {
+                    cli::warning("Cannot get current working directory, using '.'");
+                    PathBuf::from(".")
+                })
+            },
             PathBuf::from,
         );
 
