@@ -3,7 +3,7 @@
 //! Handles reading from and writing to disk, rule validation, and rule management
 //! within Tooka's file operation rules system.
 
-use crate::{core::context, core::error::TookaError, rules::rule::Rule};
+use crate::{core::context, core::error::TookaError, rules::contradiction, rules::rule::Rule};
 use serde::{Deserialize, Serialize};
 use std::{
     fs,
@@ -94,10 +94,26 @@ impl RulesFile {
         log::debug!("Parsed new rule: {rule:?}");
         rule.validate(true)?;
 
+        // Check for self-contradictions
+        let self_conflicts = contradiction::check_self_contradiction(&rule);
+        for conflict in self_conflicts {
+            if conflict.level == contradiction::ConflictLevel::SelfContradiction {
+                return Err(TookaError::InvalidRule(format!(
+                    "Rule '{}' has a self-contradiction: {}",
+                    rule.id, conflict.message
+                )));
+            }
+        }
+
+        // Check for conflicts with existing rules
+        let rule_conflicts = contradiction::check_rule_conflicts(&rule, &self.rules);
+
         if let Some(pos) = self.rules.iter().position(|r| r.id == rule.id) {
             if overwrite {
                 self.rules[pos] = rule;
                 self.save()?;
+                // Log conflicts even when overwriting
+                Self::log_conflicts(&rule_conflicts);
                 return Ok(());
             }
             return Err(TookaError::InvalidRule(format!(
@@ -108,6 +124,10 @@ impl RulesFile {
 
         self.rules.push(rule);
         self.save()?;
+
+        // Log conflicts after successfully adding
+        Self::log_conflicts(&rule_conflicts);
+
         Ok(())
     }
 
@@ -119,9 +139,25 @@ impl RulesFile {
             log::debug!("Parsed rule: {rule:?}");
             rule.validate(true)?;
 
+            // Check for self-contradictions
+            let self_conflicts = contradiction::check_self_contradiction(&rule);
+            for conflict in self_conflicts {
+                if conflict.level == contradiction::ConflictLevel::SelfContradiction {
+                    return Err(TookaError::InvalidRule(format!(
+                        "Rule '{}' has a self-contradiction: {}",
+                        rule.id, conflict.message
+                    )));
+                }
+            }
+
+            // Check for conflicts with existing rules
+            let rule_conflicts = contradiction::check_rule_conflicts(&rule, &self.rules);
+
             if let Some(pos) = self.rules.iter().position(|r| r.id == rule.id) {
                 if overwrite {
                     self.rules[pos] = rule;
+                    // Log conflicts even when overwriting
+                    Self::log_conflicts(&rule_conflicts);
                 } else {
                     return Err(TookaError::InvalidRule(format!(
                         "Rule ID '{}' already exists",
@@ -130,6 +166,8 @@ impl RulesFile {
                 }
             } else {
                 self.rules.push(rule);
+                // Log conflicts after successfully adding
+                Self::log_conflicts(&rule_conflicts);
             }
         }
 
@@ -273,5 +311,34 @@ impl RulesFile {
         let file = fs::File::create(path)?;
         serde_yaml::to_writer(file, rules)?;
         Ok(())
+    }
+
+    /// Helper function to log conflicts detected during rule addition
+    fn log_conflicts(conflicts: &[contradiction::Conflict]) {
+        for conflict in conflicts {
+            match conflict.level {
+                contradiction::ConflictLevel::SelfContradiction => {
+                    log::error!(
+                        "Self-contradiction in rule '{}': {}",
+                        conflict.rule_id,
+                        conflict.message
+                    );
+                }
+                contradiction::ConflictLevel::PotentialConflict => {
+                    log::warn!(
+                        "Potential conflict in rule '{}': {}",
+                        conflict.rule_id,
+                        conflict.message
+                    );
+                }
+                contradiction::ConflictLevel::Overlap => {
+                    log::info!(
+                        "Rule overlap detected for '{}': {}",
+                        conflict.rule_id,
+                        conflict.message
+                    );
+                }
+            }
+        }
     }
 }
