@@ -73,7 +73,10 @@ pub fn run(args: &AddArgs) -> Result<()> {
 
         for file_path in yaml_files {
             let file_path_str = file_path.to_string_lossy();
-            let file_name = file_path.file_name().unwrap().to_string_lossy();
+            let file_name = file_path
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_else(|| "<unknown>".to_string());
             log::info!("Processing file: {file_path_str}");
 
             match rf.add_rule_from_file(&file_path_str, args.overwrite) {

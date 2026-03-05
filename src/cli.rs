@@ -77,7 +77,7 @@ pub fn rule_table_row(id: &str, name: &str, enabled: bool) {
 pub fn progress_style() -> indicatif::ProgressStyle {
     indicatif::ProgressStyle::default_bar()
         .template("{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos}/{len} {msg}")
-        .unwrap()
+        .unwrap_or_else(|_| indicatif::ProgressStyle::default_bar())
         .progress_chars("#>-")
 }
 

@@ -231,7 +231,7 @@ fn show_status() -> Result<()> {
             println!(
                 "  {} {}",
                 "Last Run:".bright_white(),
-                local_time.format("%Y-%m-%d %H:%M:%S").to_string()
+                local_time.format("%Y-%m-%d %H:%M:%S")
             );
         } else {
             println!("  {} {}", "Last Run:".bright_white(), "Never".bright_black());
@@ -319,15 +319,17 @@ fn run_daemon(args: &DaemonRunArgs) -> Result<()> {
     let running = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(true));
     let r = running.clone();
     
-    ctrlc::set_handler(move || {
+    if let Err(e) = ctrlc::set_handler(move || {
         r.store(false, std::sync::atomic::Ordering::SeqCst);
-    }).expect("Error setting Ctrl-C handler");
+    }) {
+        cli::warning(&format!("Failed to set Ctrl-C handler: {}", e));
+        log::warn!("Failed to set Ctrl-C handler: {}", e);
+    }
 
     // Display initial status
     for folder in &monitor_config.folders {
         println!(
-            "  {} {} (every {} seconds)",
-            "📁".to_string(),
+            "  📁 {} (every {} seconds)",
             folder.path.display().to_string().bright_cyan(),
             folder.interval_seconds
         );

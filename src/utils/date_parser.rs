@@ -56,7 +56,10 @@ fn parse_relative_date(date_str: &str) -> Result<DateTime<Utc>, String> {
     }
 
     // Parse the number and unit
-    let unit_char = date_str.chars().last().unwrap();
+    let unit_char = match date_str.chars().last() {
+        Some(c) => c,
+        None => return Err("Invalid relative date format".to_string()),
+    };
     let number_str = &date_str[..date_str.len() - 1];
 
     let number: i64 = number_str
