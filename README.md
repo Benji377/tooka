@@ -1,4 +1,4 @@
-# 🗂️ Tooka
+# Tooka
 
 [![clippy]](https://github.com/Benji377/tooka/actions/workflows/clippy.yml)
 [![test]](https://github.com/Benji377/tooka/actions/workflows/test.yml)
@@ -16,7 +16,7 @@ A fast, rule-based CLI tool for organizing files.
 
 ---
 
-## 🧭 Introduction
+## Introduction
 
 **Tooka** is a flexible command-line tool for automating your filesystem: organize, rename, move, copy, or delete files using simple, powerful YAML rules.
 
@@ -24,7 +24,7 @@ You define what files to match (by name, extension, metadata, size, etc.) and wh
 
 ---
 
-## ✨ Features
+## Features
 
 * **Rule-based automation** - Define custom file organization rules using declarative YAML
 * **Automatic monitoring** - Set up background monitoring to automatically sort folders at intervals
@@ -37,7 +37,7 @@ You define what files to match (by name, extension, metadata, size, etc.) and wh
 
 ---
 
-## 📦 Installation
+## Installation
 
 ```bash
 git clone https://github.com/Benji377/tooka.git
@@ -47,7 +47,7 @@ cargo build --release
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 # Sort files based on rules
@@ -62,7 +62,7 @@ See the [Wiki](https://github.com/Benji377/tooka/wiki) for detailed documentatio
 
 ---
 
-## 🚀 Performance
+## Performance
 
 Tooka is designed for speed with:
 - Parallel file processing using Rayon
@@ -78,7 +78,7 @@ See [benches/README.md](benches/README.md) for details.
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! Please see:
 
@@ -88,7 +88,7 @@ We welcome contributions! Please see:
 
 ---
 
-## 💬 Community & Support
+## Community & Support
 
 - **Bug Reports**: [GitHub Issues](https://github.com/Benji377/tooka/issues)
 - **Feature Requests**: [GitHub Discussions](https://github.com/Benji377/tooka/discussions)
@@ -96,7 +96,7 @@ We welcome contributions! Please see:
 
 ---
 
-## 📜 License
+## License
 
 Licensed under [GPLv3](LICENSE)
 
