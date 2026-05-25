@@ -19,7 +19,7 @@ jobs:
             artifact_paths: target/release/tooka*_aarch64.dmg
             build_args: ""
             cross: false
-          - platform: macos-15-intel
+          - platform: macos-26-intel
             artifact_paths: target/release/tooka*_x64.dmg
             build_args: ""
             cross: false
