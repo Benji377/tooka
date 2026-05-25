@@ -1,6 +1,6 @@
 [package]
 name = "tooka"
-version = "1.1.0"
+version = "1.1.1"
 description = "A fast, rule-based CLI tool for organizing your files"
 authors = ["Benjamin Demetz"]
 license = "GPL-3.0-only"
@@ -29,7 +29,7 @@ anyhow = "1.0.98"
 log = "0.4.27"
 directories-next = "2.0.0"
 flexi_logger = "0.31.2"
-thiserror = "2.0.17"
+thiserror = "2.0.18"
 lazy_static = "1.5.0"
 ctrlc = "3.4.5"
 # File operations and metadata extraction
