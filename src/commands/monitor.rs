@@ -428,7 +428,7 @@ fn run_folder_sort(
         }
         Err(e) => {
             let error_msg = format!("Sorting failed: {}", e);
-            cli::error(&format!("[{}] {}", timestamp, &error_msg));
+            cli::error(&format!("[{}] {}", timestamp, error_msg));
             log::error!("Failed to sort folder {}: {}", folder.path.display(), e);
             monitor_config.update_status(&folder.path, RunStatus::Failed { error: error_msg })?;
         }
