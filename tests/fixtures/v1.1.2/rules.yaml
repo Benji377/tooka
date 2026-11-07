@@ -1,0 +1,95 @@
+rules:
+- id: photos
+  name: Photos by date
+  enabled: true
+  description: Move and rename photos
+  priority: 5
+  when:
+    any: false
+    filename: null
+    extensions:
+    - jpg
+    - jpeg
+    path: null
+    size_kb:
+      min: 1
+      max: 50000
+    mime_type: null
+    created_date: null
+    modified_date: null
+    is_symlink: null
+    metadata:
+    - key: EXIF:DateTime
+      value: null
+  then:
+  - action: move
+    to: ~/Pictures/sorted
+    preserve_structure: true
+  - action: rename
+    to: "{{metadata.EXIF:DateTime|date:%Y-%m-%d}}_{{filename}}.jpg"
+- id: docs
+  name: Documents
+  enabled: true
+  description: null
+  priority: 3
+  when:
+    any: true
+    filename: ^invoice
+    extensions: null
+    path: null
+    size_kb: null
+    mime_type: application/pdf
+    created_date: null
+    modified_date:
+      from: "2024-01-01"
+      to: null
+    is_symlink: null
+    metadata: null
+  then:
+  - action: copy
+    to: /tmp/backup
+    preserve_structure: false
+  - action: execute
+    command: echo
+    args:
+    - done
+- id: junk
+  name: Junk
+  enabled: true
+  description: Remove temp files
+  priority: 1
+  when:
+    any: null
+    filename: null
+    extensions: null
+    path: "**/tmp/*"
+    size_kb: null
+    mime_type: null
+    created_date:
+      from: null
+      to: "2020-12-31"
+    modified_date: null
+    is_symlink: false
+    metadata: null
+  then:
+  - action: delete
+    trash: true
+- id: ignore
+  name: Ignore
+  enabled: true
+  description: null
+  priority: 0
+  when:
+    any: null
+    filename: null
+    extensions:
+    - part
+    path: null
+    size_kb: null
+    mime_type: null
+    created_date: null
+    modified_date: null
+    is_symlink: null
+    metadata: null
+  then:
+  - action: skip

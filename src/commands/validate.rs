@@ -4,18 +4,14 @@ use anyhow::Result;
 use clap::Args;
 
 #[derive(Args)]
-#[command(about = "✅ Validate a rule YAML file against the schema")]
+#[command(about = "✅ Validate a rule YAML file (structure, patterns, dates and actions)")]
 pub struct ValidateArgs {
     /// Path to the rule YAML file
     #[arg(value_name = "FILE", help = "Path to the YAML file to validate")]
     pub file: String,
 
-    /// Optional flag to do a full validation, including value limits
-    #[arg(
-        long,
-        default_value_t = false,
-        help = "Perform deep validation including value limits"
-    )]
+    /// Kept so existing scripts keep working; validation is always complete.
+    #[arg(long, hide = true)]
     pub deep: bool,
 }
 
@@ -29,12 +25,8 @@ pub fn run(args: &ValidateArgs) -> Result<()> {
     log::info!("Loaded {} rules from file: {}", rules.len(), args.file);
     println!("Loaded {} rules from file: {}", rules.len(), args.file);
 
-    if !args.deep {
-        cli::success("File is structurally valid (schema match)");
-        return Ok(());
-    }
-
-    // Only validate rule content when deep is true
+    // Check the content too (patterns, dates, action order), exactly as
+    // `tooka add` and `tooka sort` do.
     let mut err_count = 0;
     for rule in rules {
         if let Err(e) = rule.validate(true) {

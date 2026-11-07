@@ -447,7 +447,7 @@ fn format_conflict_message(rule1: &Rule, rule2: &Rule, level: ConflictLevel) -> 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::rules::rule::{Conditions, DeleteAction, MoveAction, Rule};
+    use crate::rules::rule::{Conditions, DeleteAction, MoveAction, OnConflict, Rule};
 
     fn create_test_rule(id: &str, priority: u32, conditions: Conditions) -> Rule {
         Rule {
@@ -461,6 +461,7 @@ mod tests {
                 to: "/test".to_string(),
                 preserve_structure: false,
             })],
+            on_conflict: OnConflict::Abort,
         }
     }
 
@@ -646,6 +647,7 @@ mod tests {
                 metadata: None,
             },
             then: vec![Action::Delete(DeleteAction { trash: true })],
+            on_conflict: OnConflict::Abort,
         };
 
         let conflicts = check_rule_conflicts(&rule1, &[rule2]);

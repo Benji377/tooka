@@ -10,6 +10,25 @@ use crate::{
     utils::date_parser::parse_date,
 };
 
+/// The plain text of an EXIF text (ASCII) value, without the quotes and
+/// escaping that `display_value` adds. `None` for other value types.
+pub(crate) fn exif_text(value: &exif::Value) -> Option<String> {
+    match value {
+        exif::Value::Ascii(parts) => Some(
+            parts
+                .iter()
+                .map(|p| {
+                    String::from_utf8_lossy(p)
+                        .trim_end_matches('\0')
+                        .to_string()
+                })
+                .collect::<Vec<_>>()
+                .join(", "),
+        ),
+        _ => None,
+    }
+}
+
 use chrono::{NaiveDate, Utc};
 use exif::Reader;
 use glob::{self, Pattern};
@@ -193,7 +212,9 @@ pub(crate) fn match_metadata_field(file_path: &Path, field: &rule::MetadataField
     let requested_key = field.key.to_lowercase();
 
     for f in exif.fields() {
-        let exif_key = format!("EXIF:{:?}", f.tag).to_lowercase();
+        // `Display` gives the tag's name ("Make"); `Debug` would give
+        // "Tag(Tiff, 271)", which no rule could ever match.
+        let exif_key = format!("EXIF:{}", f.tag).to_lowercase();
         let value_str = f.display_value().with_unit(&exif).to_string();
 
         if exif_key == requested_key {
@@ -202,7 +223,10 @@ pub(crate) fn match_metadata_field(file_path: &Path, field: &rule::MetadataField
             if let Some(pattern_str) = &field.value {
                 match Pattern::new(pattern_str) {
                     Ok(pattern) => {
-                        let is_match = pattern.matches(&value_str);
+                        // Text values are displayed in quotes ("Google"); match
+                        // the plain text as well, so `value: Google` works.
+                        let is_match = pattern.matches(&value_str)
+                            || exif_text(&f.value).is_some_and(|text| pattern.matches(&text));
                         log::debug!(
                             "Comparing EXIF value '{value_str}' with pattern '{pattern_str}': {is_match}"
                         );
@@ -246,58 +270,52 @@ pub fn match_rule_matcher(file_path: &Path, conditions: &Conditions) -> bool {
     };
     log::debug!("File metadata: {metadata:?}");
 
-    let matches = [
-        conditions
-            .filename
-            .as_ref()
-            .map_or(Ok(true), |pattern| match_filename_regex(file_path, pattern)),
-        conditions
-            .extensions
-            .as_ref()
-            .map_or(Ok(true), |exts| Ok(match_extensions(file_path, exts))),
-        conditions
-            .path
-            .as_ref()
-            .map_or(Ok(true), |pattern| match_path(file_path, pattern)),
-        conditions
-            .size_kb
-            .as_ref()
-            .map_or(Ok(true), |size| Ok(match_size_kb(&metadata, size))),
-        conditions
-            .mime_type
-            .as_ref()
-            .map_or(Ok(true), |m| Ok(match_mime_type(file_path, m))),
-        conditions
-            .created_date
-            .as_ref()
-            .map_or(Ok(true), |date_range| {
-                Ok(match_date_range_created(&metadata, date_range))
-            }),
-        conditions
-            .modified_date
-            .as_ref()
-            .map_or(Ok(true), |date_range| {
-                Ok(match_date_range_mod(&metadata, date_range))
-            }),
-        conditions
-            .is_symlink
-            .map_or(Ok(true), |b| Ok(match_is_symlink(&metadata, b))),
-        conditions
-            .metadata
-            .as_ref()
-            .map_or(Ok(true), |metadata_fields| {
-                Ok(metadata_fields
-                    .iter()
-                    .all(|field| match_metadata_field(file_path, field)))
-            }),
-    ];
+    // Only conditions that are actually set take part. Unset conditions must
+    // not count as "matched", otherwise `any: true` would match every file.
+    // A condition that fails to evaluate (e.g. an invalid regex) counts as
+    // not matched.
+    let ok = |r: Result<bool, TookaError>| r.unwrap_or(false);
+    let mut results: Vec<bool> = Vec::new();
+    if let Some(pattern) = &conditions.filename {
+        results.push(ok(match_filename_regex(file_path, pattern)));
+    }
+    if let Some(exts) = &conditions.extensions {
+        results.push(match_extensions(file_path, exts));
+    }
+    if let Some(pattern) = &conditions.path {
+        results.push(ok(match_path(file_path, pattern)));
+    }
+    if let Some(size) = &conditions.size_kb {
+        results.push(match_size_kb(&metadata, size));
+    }
+    if let Some(mime) = &conditions.mime_type {
+        results.push(match_mime_type(file_path, mime));
+    }
+    if let Some(range) = &conditions.created_date {
+        results.push(match_date_range_created(&metadata, range));
+    }
+    if let Some(range) = &conditions.modified_date {
+        results.push(match_date_range_mod(&metadata, range));
+    }
+    if let Some(is_symlink) = conditions.is_symlink {
+        results.push(match_is_symlink(&metadata, is_symlink));
+    }
+    if let Some(fields) = &conditions.metadata {
+        results.push(
+            fields
+                .iter()
+                .all(|field| match_metadata_field(file_path, field)),
+        );
+    }
+
     let any_conditions = conditions.any.unwrap_or(false);
-    log::debug!("Conditions any: {any_conditions}, matches: {matches:?}");
-    if any_conditions {
-        log::debug!("Using OR logic for conditions");
-        matches.into_iter().any(|m| m.unwrap_or(false))
+    log::debug!("Conditions any: {any_conditions}, results: {results:?}");
+    if results.is_empty() {
+        // A rule without conditions matches every file.
+        true
+    } else if any_conditions {
+        results.into_iter().any(|m| m)
     } else {
-        log::debug!("Using AND logic for conditions");
-        matches.into_iter().all(|m| m.unwrap_or(false))
+        results.into_iter().all(|m| m)
     }
 }

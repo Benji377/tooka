@@ -1,7 +1,17 @@
 use crate::{
     core::error::TookaError,
-    rules::rule::{Action, Conditions, DateRange, MetadataField, MoveAction, Range, Rule},
+    rules::rule::{Action, Conditions, MetadataField, MoveAction, OnConflict, Range, Rule},
 };
+
+/// Explains the optional settings that are not part of the example above.
+const TEMPLATE_FOOTER: &str = "\
+# Optional: what to do when a destination file already exists
+# (abort = stop the whole sort without changing anything, the default;
+#  skip = leave this file alone; rename = keep both as 'name (1).ext').
+# on_conflict: abort
+#
+# Full reference: https://github.com/Benji377/tooka/blob/main/docs/rules.md
+";
 
 /// Generates a YAML template for a Tooka rule.
 pub fn generate_rule_template_yaml() -> Result<String, TookaError> {
@@ -21,14 +31,11 @@ pub fn generate_rule_template_yaml() -> Result<String, TookaError> {
                 max: Some(5000),
             }),
             mime_type: Some("image/jpeg".to_string()),
-            created_date: Some(DateRange {
-                from: None,
-                to: None,
-            }),
+            created_date: None,
             modified_date: None,
             is_symlink: None,
             metadata: Some(vec![MetadataField {
-                key: "EXIF:DateTime".to_string(),
+                key: "EXIF:DateTimeOriginal".to_string(),
                 value: None,
             }]),
         },
@@ -36,7 +43,9 @@ pub fn generate_rule_template_yaml() -> Result<String, TookaError> {
             to: "/path/to/destination".to_string(),
             preserve_structure: false,
         })],
+        on_conflict: OnConflict::Abort,
     };
 
-    Ok(crate::utils::yaml::to_string(&rule)?)
+    let yaml = crate::utils::yaml::to_string(&rule)?;
+    Ok(format!("{yaml}{TEMPLATE_FOOTER}"))
 }

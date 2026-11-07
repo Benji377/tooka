@@ -16,11 +16,11 @@ Tags:
   - "organizer"
   - "tooka"
 Documentations: 
-  - DocumentLabel: GitHub Wiki
+  - DocumentLabel: Documentation
 ManifestType: defaultLocale
 ManifestVersion: 1.9.0
 PublisherUrl: https://github.com/benji377
 PublisherSupportUrl: https://github.com/benji377/tooka/issues
 LicenseUrl: https://github.com/benji377/tooka/raw/main/LICENSE
-  DocumentUrl: https://github.com/benji377/tooka/wiki
+  DocumentUrl: https://github.com/Benji377/tooka/tree/main/docs
 ReleaseNotesUrl: https://github.com/benji377/tooka/releases/tag/v<VERSION>

@@ -22,7 +22,7 @@ A clear and concise description of what you expected to happen.
 
 **Logs**
 If applicable, add logs to help us debug the issue faster.
-You can [check the wiki](https://github.com/Benji377/tooka/wiki/Configuration#-what-you-can-configure) on how to retrieve them.
+See [where the logs are](https://github.com/Benji377/tooka/blob/main/docs/configuration.md#logs) (`tooka config --show` prints the logs folder).
 
 **Desktop (please complete the following information):**
  - OS: [e.g. iOS]

@@ -28,37 +28,48 @@ You define what files to match (by name, extension, metadata, size, etc.) and wh
 
 * **Rule-based automation** - Define custom file organization rules using declarative YAML
 * **Automatic monitoring** - Set up background monitoring to automatically sort folders at intervals
-* **High-performance** - Parallel recursive directory traversal and file operations
+* **High-performance** - Files are matched against your rules in parallel
 * **Flexible filtering** - Match files by name patterns, extensions, MIME types, size, metadata, and timestamps
-* **Multiple actions** - Move, copy, rename, delete, or skip files based on conditions
+* **Multiple actions** - Move, copy, rename, delete, run a command, or skip files based on conditions
 * **Template support** - Dynamic file naming with customizable templates
-* **Safe operations** - Dry-run mode and comprehensive logging for safety
+* **Safe operations** - A sort either completes or is undone; existing files are never overwritten, and `tooka recover` cleans up after a crash
 * **Cross-platform** - Works seamlessly on Windows, macOS, and Linux
 
 ---
 
 ## Installation
 
+Packages for Windows (also via `winget install Benji377.Tooka`), macOS and
+Linux are on the [releases page](https://github.com/Benji377/tooka/releases).
+With Rust installed:
+
 ```bash
-git clone https://github.com/Benji377/tooka.git
-cd tooka
-cargo build --release
+cargo install tooka
 ```
+
+More options in [docs/installation.md](docs/installation.md).
 
 ---
 
 ## Quick Start
 
 ```bash
-# Sort files based on rules
-tooka sort /path/to/folder --rules rules.yaml
+# Start from a commented example rule, then add it
+tooka template --output my-rule.yaml
+tooka validate my-rule.yaml
+tooka add my-rule.yaml
+
+# Preview, then sort (the default source folder, or --source)
+tooka sort --dry-run
+tooka sort --source ~/Downloads
 
 # Monitor folder automatically
 tooka monitor add ~/Downloads --interval 300
 tooka monitor daemon run
 ```
 
-See the [Wiki](https://github.com/Benji377/tooka/wiki) for detailed documentation and examples.
+See the **[documentation](docs/README.md)** for installation, the complete
+[rule reference](docs/rules.md), [monitoring](docs/monitoring.md) and more.
 
 ---
 
@@ -84,15 +95,14 @@ We welcome contributions! Please see:
 
 - [Contributing Guidelines](CONTRIBUTING.md) 
 - [Code of Conduct](CODE_OF_CONDUCT.md)
-- [GitHub Discussions](https://github.com/Benji377/tooka/discussions) for ideas and questions
 
 ---
 
 ## Community & Support
 
 - **Bug Reports**: [GitHub Issues](https://github.com/Benji377/tooka/issues)
-- **Feature Requests**: [GitHub Discussions](https://github.com/Benji377/tooka/discussions)
-- **Documentation**: [Wiki](https://github.com/Benji377/tooka/wiki)
+- **Feature Requests**: [GitHub Issues](https://github.com/Benji377/tooka/issues)
+- **Documentation**: [docs folder](docs/README.md)
 
 ---
 

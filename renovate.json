@@ -3,22 +3,53 @@
     "extends": [
         "config:recommended"
     ],
+    "minimumReleaseAge": "3 days",
+    "internalChecksFilter": "strict",
+    "osvVulnerabilityAlerts": true,
+    "platformAutomerge": false,
+    "vulnerabilityAlerts": {
+        "automerge": true
+    },
     "lockFileMaintenance": {
         "enabled": true,
         "automerge": true
     },
     "packageRules": [
         {
+            "description": "Patch updates are compatible by semver (also 0.x.y with x > 0)",
             "matchUpdateTypes": [
-                "minor",
                 "patch"
+            ],
+            "automerge": true
+        },
+        {
+            "description": "Minor updates are only compatible for crates at 1.0 or later",
+            "matchUpdateTypes": [
+                "minor"
             ],
             "matchCurrentVersion": ">= 1.0.0",
             "automerge": true
         },
         {
+            "description": "Development-only dependencies cannot break users",
             "matchDepTypes": [
-                "devDependencies"
+                "dev-dependencies"
+            ],
+            "matchUpdateTypes": [
+                "minor",
+                "patch"
+            ],
+            "automerge": true
+        },
+        {
+            "description": "CI actions",
+            "matchManagers": [
+                "github-actions"
+            ],
+            "matchUpdateTypes": [
+                "minor",
+                "patch",
+                "digest"
             ],
             "automerge": true
         }

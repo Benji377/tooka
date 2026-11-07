@@ -1,13 +1,27 @@
-//! Monitoring configuration and state management.
+//! Monitoring configuration and daemon state.
 //!
-//! This module manages the background monitoring system that automatically
-//! sorts files in specified folders at configured intervals.
+//! The monitoring daemon periodically sorts configured folders. This module
+//! stores which folders are monitored (`monitoring.yml` in the config
+//! directory) and tracks whether the daemon is running.
+//!
+//! "Is the daemon running?" is answered with an operating-system file lock
+//! held by the daemon (`monitor.lock`): the OS releases it automatically
+//! when the daemon exits or crashes, so a stale state is impossible. The PID
+//! file is only used to know which process to stop.
 
-use crate::core::error::TookaError;
-use anyhow::Result;
+use crate::{common::environment, core::error::TookaError, utils::fsutil};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::{fs, path::PathBuf};
+use std::{
+    fs::{self, File, OpenOptions, TryLockError},
+    io,
+    path::{Path, PathBuf},
+};
+
+const MONITOR_FILE_NAME: &str = "monitoring.yml";
+const PID_FILE_NAME: &str = "monitor.pid";
+const LOCK_FILE_NAME: &str = "monitor.lock";
+const STOP_FILE_NAME: &str = "monitor.stop";
 
 /// Represents a single monitored folder
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -55,14 +69,32 @@ impl Default for MonitorConfig {
 }
 
 impl MonitorConfig {
-    /// Load monitoring configuration from disk
+    /// Loads the monitoring configuration, creating an empty one if needed.
+    ///
+    /// Tooka versions before 1.2.0 stored this file in `~/.config/tooka`
+    /// on every platform. If it only exists there, it is migrated.
     pub fn load() -> Result<Self, TookaError> {
         let config_path = Self::config_path();
 
+        if !config_path.exists()
+            && let Some(legacy) = Self::legacy_config_path()
+            && legacy != config_path
+            && legacy.is_file()
+        {
+            log::info!(
+                "Migrating monitoring config from {} to {}",
+                legacy.display(),
+                config_path.display()
+            );
+            let content = fs::read_to_string(&legacy)?;
+            let config: MonitorConfig = serde_saphyr::from_str(&content)?;
+            config.save()?;
+            return Ok(config);
+        }
+
         if config_path.exists() {
             let content = fs::read_to_string(&config_path)?;
-            let config: MonitorConfig = serde_saphyr::from_str(&content)?;
-            Ok(config)
+            Ok(serde_saphyr::from_str(&content)?)
         } else {
             let config = Self::default();
             config.save()?;
@@ -70,126 +102,92 @@ impl MonitorConfig {
         }
     }
 
-    /// Save monitoring configuration to disk
+    /// Saves the monitoring configuration (atomically).
     pub fn save(&self) -> Result<(), TookaError> {
-        let config_path = Self::config_path();
-
-        if let Some(parent) = config_path.parent() {
-            fs::create_dir_all(parent)?;
-        }
-
         let content = crate::utils::yaml::to_string(self)?;
-        fs::write(&config_path, content)?;
+        fsutil::write_atomic(&Self::config_path(), content.as_bytes())?;
         Ok(())
     }
 
-    /// Get the path to the monitoring configuration file
     fn config_path() -> PathBuf {
-        let home_dir = std::env::var("HOME")
-            .map(PathBuf::from)
-            .unwrap_or_else(|_| PathBuf::from("."));
-
-        let config_dir = home_dir.join(".config").join("tooka");
-        config_dir.join("monitoring.yml")
+        environment::config_dir().join(MONITOR_FILE_NAME)
     }
 
-    /// Get the path to the PID file
+    /// Location used before 1.2.0, unless an explicit config dir is set.
+    fn legacy_config_path() -> Option<PathBuf> {
+        if std::env::var_os("TOOKA_CONFIG_DIR").is_some() {
+            return None;
+        }
+        Some(
+            environment::home_dir()
+                .join(".config")
+                .join("tooka")
+                .join(MONITOR_FILE_NAME),
+        )
+    }
+
+    /// Path of the file holding the daemon's PID.
     pub fn pid_file_path() -> PathBuf {
-        let home_dir = std::env::var("HOME")
-            .map(PathBuf::from)
-            .unwrap_or_else(|_| PathBuf::from("."));
-
-        let config_dir = home_dir.join(".config").join("tooka");
-        config_dir.join("monitor.pid")
+        environment::config_dir().join(PID_FILE_NAME)
     }
 
-    /// Write the daemon PID to a file
-    pub fn write_pid() -> Result<(), TookaError> {
-        let pid_path = Self::pid_file_path();
-
-        if let Some(parent) = pid_path.parent() {
-            fs::create_dir_all(parent)?;
-        }
-
-        let pid = std::process::id();
-        fs::write(&pid_path, pid.to_string())?;
-        Ok(())
-    }
-
-    /// Remove the PID file
-    pub fn remove_pid() -> Result<(), TookaError> {
-        let pid_path = Self::pid_file_path();
-        if pid_path.exists() {
-            fs::remove_file(&pid_path)?;
-        }
-        Ok(())
-    }
-
-    /// Read the daemon PID from the file
+    /// Reads the daemon PID, if a PID file exists.
     pub fn read_pid() -> Result<Option<u32>, TookaError> {
-        let pid_path = Self::pid_file_path();
-
-        if !pid_path.exists() {
-            return Ok(None);
-        }
-
-        let content = fs::read_to_string(&pid_path)?;
-        let pid = content
+        let content = match fs::read_to_string(Self::pid_file_path()) {
+            Ok(c) => c,
+            Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(None),
+            Err(e) => return Err(e.into()),
+        };
+        content
             .trim()
             .parse::<u32>()
-            .map_err(|e| TookaError::ConfigError(format!("Invalid PID in file: {}", e)))?;
-
-        Ok(Some(pid))
+            .map(Some)
+            .map_err(|e| TookaError::ConfigError(format!("Invalid PID in file: {e}")))
     }
 
-    /// Check if the daemon is running
+    /// Path of the file that asks a running daemon to stop.
+    pub fn stop_request_path() -> PathBuf {
+        environment::config_dir().join(STOP_FILE_NAME)
+    }
+
+    /// Asks the running daemon to stop at its next safe point.
+    pub fn request_stop() -> Result<(), TookaError> {
+        fsutil::write_atomic(&Self::stop_request_path(), b"stop")?;
+        Ok(())
+    }
+
+    /// Returns true if a monitoring daemon currently holds the daemon lock.
     pub fn is_daemon_running() -> bool {
-        if let Ok(Some(pid)) = Self::read_pid() {
-            // Check if the process is actually running
-            #[cfg(unix)]
-            {
-                use std::process::Command;
-                if let Ok(output) = Command::new("ps").arg("-p").arg(pid.to_string()).output() {
-                    return output.status.success();
-                }
-            }
-
-            #[cfg(not(unix))]
-            {
-                // On Windows, we can use different approach
-                // For now, just assume if PID file exists, it's running
-                return true;
-            }
-        }
-        false
+        let Ok(file) = open_lock_file(&environment::config_dir()) else {
+            return false;
+        };
+        matches!(file.try_lock(), Err(TryLockError::WouldBlock))
     }
 
-    /// Add a new folder to monitor
+    /// Adds a folder to monitor. The path is stored as an absolute path, so
+    /// it does not depend on where the daemon is started.
     pub fn add_folder(
         &mut self,
         path: PathBuf,
         interval_seconds: u64,
         rule_filter: Option<Vec<String>>,
     ) -> Result<(), TookaError> {
-        // Check if folder already exists
+        if !path.is_dir() {
+            return Err(TookaError::ConfigError(format!(
+                "Path '{}' does not exist or is not a directory",
+                path.display()
+            )));
+        }
+        if interval_seconds == 0 {
+            return Err(TookaError::ConfigError(
+                "The interval must be at least 1 second".into(),
+            ));
+        }
+        let path = std::path::absolute(&path)?;
+
         if self.folders.iter().any(|f| f.path == path) {
             return Err(TookaError::ConfigError(format!(
                 "Folder '{}' is already being monitored",
-                path.display()
-            )));
-        }
-
-        // Verify the path exists and is a directory
-        if !path.exists() {
-            return Err(TookaError::ConfigError(format!(
-                "Path '{}' does not exist",
-                path.display()
-            )));
-        }
-
-        if !path.is_dir() {
-            return Err(TookaError::ConfigError(format!(
-                "Path '{}' is not a directory",
                 path.display()
             )));
         }
@@ -202,14 +200,15 @@ impl MonitorConfig {
             rule_filter,
         });
 
-        self.save()?;
-        Ok(())
+        self.save()
     }
 
-    /// Remove a monitored folder
-    pub fn remove_folder(&mut self, path: &PathBuf) -> Result<(), TookaError> {
+    /// Removes a monitored folder.
+    pub fn remove_folder(&mut self, path: &Path) -> Result<(), TookaError> {
+        let absolute = std::path::absolute(path).unwrap_or_else(|_| path.to_path_buf());
         let initial_len = self.folders.len();
-        self.folders.retain(|f| &f.path != path);
+        self.folders
+            .retain(|f| f.path != path && f.path != absolute);
 
         if self.folders.len() == initial_len {
             return Err(TookaError::ConfigError(format!(
@@ -218,48 +217,90 @@ impl MonitorConfig {
             )));
         }
 
-        self.save()?;
-        Ok(())
+        self.save()
     }
 
-    /// Update the status of a monitored folder after a run
-    pub fn update_status(&mut self, path: &PathBuf, status: RunStatus) -> Result<(), TookaError> {
-        if let Some(folder) = self.folders.iter_mut().find(|f| &f.path == path) {
-            folder.last_run = Some(Utc::now());
-            folder.last_status = status;
-            self.save()?;
-            Ok(())
-        } else {
-            Err(TookaError::ConfigError(format!(
-                "Folder '{}' is not being monitored",
-                path.display()
-            )))
-        }
+    /// Updates the status of a monitored folder after a run.
+    pub fn update_status(&mut self, path: &Path, status: RunStatus) -> Result<(), TookaError> {
+        let folder = self
+            .folders
+            .iter_mut()
+            .find(|f| f.path == path)
+            .ok_or_else(|| {
+                TookaError::ConfigError(format!(
+                    "Folder '{}' is not being monitored",
+                    path.display()
+                ))
+            })?;
+        folder.last_run = Some(Utc::now());
+        folder.last_status = status;
+        self.save()
     }
 
-    /// Get time until next run for a folder
-    pub fn time_until_next_run(&self, path: &PathBuf) -> Option<i64> {
-        self.folders
-            .iter()
-            .find(|f| &f.path == path)
-            .and_then(|folder| {
-                folder.last_run.map(|last| {
-                    let next_run = last + chrono::Duration::seconds(folder.interval_seconds as i64);
-                    let now = Utc::now();
-                    (next_run - now).num_seconds().max(0)
-                })
-            })
+    /// Seconds until the folder's next run (0 if it is due), or `None` if
+    /// it never ran.
+    pub fn time_until_next_run(folder: &MonitoredFolder) -> Option<i64> {
+        folder.last_run.map(|last| {
+            let interval = i64::try_from(folder.interval_seconds).unwrap_or(i64::MAX);
+            let next_run = last + chrono::Duration::seconds(interval);
+            (next_run - Utc::now()).num_seconds().max(0)
+        })
     }
 
-    /// Check if a folder is due for sorting
-    pub fn is_due(&self, folder: &MonitoredFolder) -> bool {
-        match folder.last_run {
-            None => true, // Never run
-            Some(last) => {
-                let elapsed = Utc::now().signed_duration_since(last);
-                elapsed.num_seconds() >= folder.interval_seconds as i64
+    /// Checks if a folder is due for sorting.
+    pub fn is_due(folder: &MonitoredFolder) -> bool {
+        Self::time_until_next_run(folder).is_none_or(|secs| secs == 0)
+    }
+}
+
+fn open_lock_file(dir: &Path) -> io::Result<File> {
+    fs::create_dir_all(dir)?;
+    OpenOptions::new()
+        .create(true)
+        .truncate(false)
+        .write(true)
+        .open(dir.join(LOCK_FILE_NAME))
+}
+
+/// Proof that this process is the (only) monitoring daemon. Holding it keeps
+/// the daemon lock; dropping it removes the PID file.
+#[derive(Debug)]
+pub struct DaemonGuard {
+    _lock: File,
+}
+
+impl DaemonGuard {
+    /// Becomes the daemon. Returns `Ok(None)` if another daemon is running.
+    pub fn acquire() -> Result<Option<Self>, TookaError> {
+        let dir = environment::config_dir();
+        let lock = open_lock_file(&dir)?;
+        // `is_daemon_running` holds the lock for a moment while checking, so
+        // retry briefly before concluding that another daemon runs.
+        let mut attempts = 0;
+        loop {
+            match lock.try_lock() {
+                Ok(()) => break,
+                Err(TryLockError::WouldBlock) if attempts < 10 => {
+                    attempts += 1;
+                    std::thread::sleep(std::time::Duration::from_millis(50));
+                }
+                Err(TryLockError::WouldBlock) => return Ok(None),
+                Err(TryLockError::Error(e)) => return Err(e.into()),
             }
         }
+        // A stop request left over from an earlier daemon is not for us.
+        let _ = fs::remove_file(dir.join(STOP_FILE_NAME));
+        fsutil::write_atomic(
+            &dir.join(PID_FILE_NAME),
+            std::process::id().to_string().as_bytes(),
+        )?;
+        Ok(Some(Self { _lock: lock }))
+    }
+}
+
+impl Drop for DaemonGuard {
+    fn drop(&mut self) {
+        let _ = fs::remove_file(MonitorConfig::pid_file_path());
     }
 }
 
@@ -268,9 +309,9 @@ impl std::fmt::Display for RunStatus {
         match self {
             RunStatus::NotRun => write!(f, "Not run yet"),
             RunStatus::Success { files_processed } => {
-                write!(f, "Success ({} files processed)", files_processed)
+                write!(f, "Success ({files_processed} files processed)")
             }
-            RunStatus::Failed { error } => write!(f, "Failed: {}", error),
+            RunStatus::Failed { error } => write!(f, "Failed: {error}"),
         }
     }
 }

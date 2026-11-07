@@ -20,8 +20,16 @@ pub fn run(args: TemplateArgs) -> Result<()> {
     let rule_template = generate_rule_template_yaml()
         .map_err(|e| anyhow!("Failed to generate rule template: {}", e))?;
 
-    std::fs::write(&output_path, rule_template)
-        .map_err(|e| anyhow!("Failed to write rule template to file: {}", e))?;
+    // Never overwrite an existing file.
+    let mut file = std::fs::File::create_new(&output_path).map_err(|e| {
+        if e.kind() == std::io::ErrorKind::AlreadyExists {
+            anyhow!("'{output_path}' already exists; choose another path with --output")
+        } else {
+            anyhow!("Failed to write rule template to file: {e}")
+        }
+    })?;
+    std::io::Write::write_all(&mut file, rule_template.as_bytes())
+        .map_err(|e| anyhow!("Failed to write rule template to file: {e}"))?;
 
     println!("Rule template YAML generated successfully at {output_path}");
 

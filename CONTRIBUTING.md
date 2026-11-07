@@ -22,7 +22,7 @@ This project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By participatin
 
 ### Prerequisites
 
-- Rust 1.87 or later
+- Rust 1.89 or later (the `rust-version` in `Cargo.toml`, checked in CI)
 - Cargo (comes with Rust)
 - Git
 
@@ -49,7 +49,7 @@ When filing a bug report, use the bug report template and include:
 - A clear description of the issue
 - Steps to reproduce the behavior
 - Expected vs. actual behavior
-- Logs (see [wiki](https://github.com/Benji377/tooka/wiki/Configuration) for log location)
+- Logs (see [Configuration → Logs](docs/configuration.md#logs) for their location)
 - Your environment (OS, terminal, version)
 
 ### Suggesting Features
@@ -60,14 +60,14 @@ Feature requests are welcome! Please use the feature request template and:
 - Consider alternative approaches
 - Provide any additional context
 
-For larger features, consider opening a [discussion](https://github.com/Benji377/tooka/discussions) first to gather feedback.
+For larger features, consider opening an issue first to gather feedback.
 
 ### Improving Documentation
 
 Documentation improvements are always appreciated:
 - Fix typos or unclear explanations
 - Add examples or use cases
-- Improve the wiki
+- Improve the [documentation](docs/README.md) in the `docs` folder
 - Write or improve code comments
 
 ## Development Setup
@@ -87,9 +87,9 @@ Documentation improvements are always appreciated:
    cargo test
    ```
 
-4. **Run linter:**
+4. **Run linter** (CI fails on any warning):
    ```bash
-   cargo clippy --all-features
+   cargo clippy --all-targets --all-features -- -D warnings
    ```
 
 5. **Format code:**
@@ -125,8 +125,16 @@ Documentation improvements are always appreciated:
 ### Testing
 
 - All new features should include tests
-- Ensure all tests pass: `cargo test`
-- Add tests to the appropriate test module
+- Ensure all tests pass: `cargo test` (CI runs them on Linux, Windows and macOS)
+- Unit tests live next to the code; the sort engine's scenarios are in
+  `src/core/engine/tests.rs`
+- `tests/cli.rs` runs the real binary in temporary folders, using
+  `TOOKA_CONFIG_DIR`, `TOOKA_DATA_DIR` and `TOOKA_SOURCE_FOLDER` so your own
+  configuration is never touched
+- `tests/fixtures/v1.1.2` holds files written by a released version; they must
+  keep loading. Never regenerate them
+- PDF reports from the tests go to a temporary folder; set
+  `TOOKA_TEST_PDF_DIR=.` to keep them for inspection
 - Test edge cases and error conditions
 
 ### Performance
@@ -201,13 +209,12 @@ Add support for custom date formats
 
 ## Community
 
-- **Discussions:** [GitHub Discussions](https://github.com/Benji377/tooka/discussions)
 - **Issues:** [GitHub Issues](https://github.com/Benji377/tooka/issues)
 
 ## Questions?
 
 If you have questions about contributing, feel free to:
-- Open a [discussion](https://github.com/Benji377/tooka/discussions)
+- Open an [issue](https://github.com/Benji377/tooka/issues)
 - Ask in an existing issue
 
 ---

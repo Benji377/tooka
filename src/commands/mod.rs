@@ -3,6 +3,7 @@ pub mod config;
 pub mod export;
 pub mod list;
 pub mod monitor;
+pub mod recover;
 pub mod remove;
 pub mod sort;
 pub mod template;

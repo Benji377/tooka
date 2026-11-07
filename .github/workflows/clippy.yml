@@ -28,7 +28,7 @@ jobs:
           components: clippy, rustfmt
 
       - name: Install required cargo
-        run: cargo install clippy-sarif sarif-fmt
+        run: cargo install --locked clippy-sarif sarif-fmt
 
       # Produces the SARIF report for GitHub code scanning. The pipe hides
       # clippy's exit code, so this step never fails on its own; the
@@ -41,8 +41,11 @@ jobs:
           --message-format=json | clippy-sarif | tee rust-clippy-results.sarif | sarif-fmt
         continue-on-error: true
 
+      # Pull requests from forks may not upload results; that must not fail
+      # the job (the "Enforce" steps below are the real gate).
       - name: Upload analysis results to GitHub
         if: always()
+        continue-on-error: true
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: rust-clippy-results.sarif

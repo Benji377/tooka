@@ -21,17 +21,17 @@ colored = "3.0.0"
 # Core functionality
 trash = "5.2.2"
 walkdir = "2.5.0"
+same-file = "1.0.6"
 rayon = "1.10.0"
 serde = {version = "1.0.219", features = ["derive"]}
 serde-saphyr = "2.1.1"
 # Config, Logging and Error handling
 anyhow = "1.0.98"
 log = "0.4.27"
-directories-next = "2.0.0"
+directories = "6.0.0"
 flexi_logger = "0.31.2"
 thiserror = "2.0.18"
-lazy_static = "1.5.0"
-ctrlc = "3.4.5"
+ctrlc = { version = "3.4.5", features = ["termination"] }
 # File operations and metadata extraction
 regex = "1.11.1"
 glob = "0.3.2"

@@ -81,7 +81,7 @@ impl RulesFile {
         let mut content = String::new();
         fs::File::open(file_path)?.read_to_string(&mut content)?;
 
-        if content.trim_start().starts_with("rules:") {
+        if crate::rules::rule::is_multi_rule_document(&content) {
             self.add_multiple_rules(&content, overwrite)
         } else {
             self.add_single_rule(&content, overwrite)
@@ -216,7 +216,15 @@ impl RulesFile {
         if let Some(rule) = self.rules.iter().find(|r| r.id == rule_id) {
             let content = crate::utils::yaml::to_string(rule)?;
             if let Some(path) = out_path {
-                fs::write(path, content)?;
+                // Never overwrite an existing file.
+                let mut file = fs::File::create_new(path).map_err(|e| {
+                    if e.kind() == std::io::ErrorKind::AlreadyExists {
+                        TookaError::ConfigError(format!("'{path}' already exists"))
+                    } else {
+                        e.into()
+                    }
+                })?;
+                std::io::Write::write_all(&mut file, content.as_bytes())?;
                 log::debug!("Exported rule {rule_id} to {path}");
             } else {
                 println!("{content}");
@@ -305,13 +313,9 @@ impl RulesFile {
 
     /// Helper function to write rules to a file
     fn write_to_file(path: &Path, rules: &Self) -> Result<(), TookaError> {
-        if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent)?;
-        }
-        let file = fs::File::create(path)?;
-        let mut writer = std::io::BufWriter::new(file);
-        crate::utils::yaml::to_writer(&mut writer, rules)?;
-        std::io::Write::flush(&mut writer)?;
+        // Atomic, so a crash while saving can never leave a truncated rules file.
+        let content = crate::utils::yaml::to_string(rules)?;
+        crate::utils::fsutil::write_atomic(path, content.as_bytes())?;
         Ok(())
     }
 

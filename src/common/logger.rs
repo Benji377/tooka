@@ -143,12 +143,11 @@ impl LogWriter for DualWriter {
         now: &mut flexi_logger::DeferredNow,
         record: &Record,
     ) -> Result<(), std::io::Error> {
-        // Try to acquire the lock, but avoid indefinite waiting
-
-        let Ok(_guard) = LOG_MUTEX.try_lock() else {
-            // If the lock is poisoned or already held, skip logging to avoid deadlock
-            return Ok(());
-        };
+        // Serialize writes from parallel threads. A poisoned lock only means
+        // another thread panicked while logging; keep logging regardless.
+        let _guard = LOG_MUTEX
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
 
         if record.target() == "file_ops" {
             // Ops logger: use numbered daily file

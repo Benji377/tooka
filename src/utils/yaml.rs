@@ -19,14 +19,6 @@ pub fn to_string<T: Serialize>(value: &T) -> Result<String, SerializeError> {
     serde_saphyr::to_string_with_options(value, options())
 }
 
-/// Serializes `value` as YAML into `writer`.
-pub fn to_writer<W: std::io::Write, T: Serialize>(
-    writer: &mut W,
-    value: &T,
-) -> Result<(), SerializeError> {
-    serde_saphyr::to_io_writer_with_options(writer, value, options())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

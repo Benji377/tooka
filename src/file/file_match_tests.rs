@@ -1,43 +1,24 @@
 use std::fs::{self};
 use std::io::Write;
-use std::path::{Path, PathBuf};
-use tempfile::NamedTempFile;
+use std::path::PathBuf;
+use tempfile::{NamedTempFile, TempDir, tempdir};
 
 use super::file_match;
-use crate::rules::rule::{DateRange, MetadataField, Range};
+use crate::rules::rule::{Conditions, DateRange, MetadataField, Range};
 
-// Helper to create a temp file and rename it to a given filename
-fn create_temp_file_with_name(filename: &str) -> PathBuf {
-    let file = NamedTempFile::new().unwrap();
-    let new_path = file.path().with_file_name(filename);
-    fs::rename(file.path(), &new_path).unwrap();
-    new_path
-}
-
-// Helper to create a temp file and set its extension
-fn create_temp_file_with_extension(ext: &str) -> PathBuf {
-    let file = NamedTempFile::new().unwrap();
-    let new_path = file.path().with_extension(ext);
-    fs::rename(file.path(), &new_path).unwrap();
-    new_path
-}
-
-// Helper to create a temp file in a nested directory with a given filename
-fn create_temp_file_in_dir<P: AsRef<Path>>(dir_and_file: P) -> PathBuf {
-    let file = NamedTempFile::new().unwrap();
-    let temp_path = file.into_temp_path();
-    let new_path = temp_path.with_file_name(dir_and_file.as_ref());
-    if let Some(parent) = new_path.parent() {
-        fs::create_dir_all(parent).unwrap();
-    }
-    temp_path.persist(&new_path).unwrap();
-    new_path
+/// Creates `rel` (e.g. "photos/a.jpg") inside `dir`, with parent folders.
+fn create_file(dir: &TempDir, rel: &str) -> PathBuf {
+    let path = dir.path().join(rel);
+    fs::create_dir_all(path.parent().unwrap()).unwrap();
+    fs::write(&path, "").unwrap();
+    path
 }
 
 #[test]
 fn test_match_filename_regex() {
-    let matching_path = create_temp_file_with_name("match_test.jpg");
-    let non_matching_path = create_temp_file_with_name("fail_test.png");
+    let dir = tempdir().unwrap();
+    let matching_path = create_file(&dir, "match_test.jpg");
+    let non_matching_path = create_file(&dir, "fail_test.png");
 
     assert!(file_match::match_filename_regex(&matching_path, r"match_.*\.jpg").unwrap());
     assert!(!file_match::match_filename_regex(&non_matching_path, r"match_.*\.jpg").unwrap());
@@ -45,8 +26,9 @@ fn test_match_filename_regex() {
 
 #[test]
 fn test_match_extensions() {
-    let matching_path = create_temp_file_with_extension("jpg");
-    let non_matching_path = create_temp_file_with_extension("png");
+    let dir = tempdir().unwrap();
+    let matching_path = create_file(&dir, "a.jpg");
+    let non_matching_path = create_file(&dir, "a.png");
 
     assert!(file_match::match_extensions(
         &matching_path,
@@ -60,8 +42,9 @@ fn test_match_extensions() {
 
 #[test]
 fn test_match_path() {
-    let matching_path = create_temp_file_in_dir("photos/match.jpg");
-    let non_matching_path = create_temp_file_in_dir("docs/fail.txt");
+    let dir = tempdir().unwrap();
+    let matching_path = create_file(&dir, "photos/match.jpg");
+    let non_matching_path = create_file(&dir, "docs/fail.txt");
 
     assert!(file_match::match_path(&matching_path, "**/photos/*.jpg").unwrap());
     assert!(!file_match::match_path(&non_matching_path, "**/photos/*.jpg").unwrap());
@@ -89,8 +72,9 @@ fn test_match_size_kb() {
 
 #[test]
 fn test_match_mime_type() {
-    let jpg_path = create_temp_file_with_extension("jpg");
-    let txt_path = create_temp_file_with_extension("txt");
+    let dir = tempdir().unwrap();
+    let jpg_path = create_file(&dir, "a.jpg");
+    let txt_path = create_file(&dir, "a.txt");
 
     assert!(file_match::match_mime_type(&jpg_path, "image/*"));
     assert!(!file_match::match_mime_type(&txt_path, "image/*"));
@@ -123,16 +107,17 @@ fn test_match_date_range_created() {
         to: Some(today.format("%Y-%m-%d").to_string()),
     };
 
-    // Note: On Linux, `created()` may return an error depending on FS.
+    // Not every filesystem records a creation time; without one the
+    // condition never matches. With one, a file created now is in range.
     let result = file_match::match_date_range_created(&meta, &range);
-    // Allow either true or false, but make sure it doesn't panic
-    assert!(matches!(result, true | false));
+    assert_eq!(result, meta.created().is_ok());
 }
 
 #[test]
 fn test_match_is_symlink() {
-    let file = NamedTempFile::new().unwrap().into_temp_path();
-    let symlink_path = file.with_extension("symlink");
+    let dir = tempdir().unwrap();
+    let file = create_file(&dir, "target.txt");
+    let symlink_path = dir.path().join("link.symlink");
 
     #[cfg(unix)]
     std::os::unix::fs::symlink(&file, &symlink_path).unwrap();
@@ -149,7 +134,8 @@ fn test_match_is_symlink() {
 
 #[test]
 fn test_match_metadata_field_nonexistent() {
-    let path = NamedTempFile::new().unwrap().into_temp_path().to_path_buf();
+    let dir = tempdir().unwrap();
+    let path = create_file(&dir, "blank.jpg");
 
     let field = MetadataField {
         key: "EXIF:DateTimeOriginal".to_string(),
@@ -158,4 +144,51 @@ fn test_match_metadata_field_nonexistent() {
 
     // No EXIF data in a blank temp file
     assert!(!file_match::match_metadata_field(&path, &field));
+}
+
+fn conditions() -> Conditions {
+    Conditions {
+        any: None,
+        filename: None,
+        extensions: None,
+        path: None,
+        size_kb: None,
+        mime_type: None,
+        created_date: None,
+        modified_date: None,
+        is_symlink: None,
+        metadata: None,
+    }
+}
+
+/// Regression: with `any: true`, conditions that are not set used to count
+/// as matched, so every file matched.
+#[test]
+fn any_mode_only_considers_conditions_that_are_set() {
+    let dir = tempdir().unwrap();
+    let pdf = create_file(&dir, "a.pdf");
+    let txt = create_file(&dir, "a.txt");
+
+    let mut or_conditions = conditions();
+    or_conditions.any = Some(true);
+    or_conditions.extensions = Some(vec!["pdf".into()]);
+    or_conditions.filename = Some("^report".into());
+    assert!(file_match::match_rule_matcher(&pdf, &or_conditions));
+    assert!(!file_match::match_rule_matcher(&txt, &or_conditions));
+
+    let mut and_conditions = or_conditions.clone();
+    and_conditions.any = Some(false);
+    assert!(!file_match::match_rule_matcher(&pdf, &and_conditions));
+
+    assert!(
+        file_match::match_rule_matcher(&txt, &conditions()),
+        "a rule without conditions matches every file"
+    );
+}
+
+#[test]
+fn exif_text_values_are_compared_without_quotes() {
+    let value = exif::Value::Ascii(vec![b"Google".to_vec()]);
+    assert_eq!(file_match::exif_text(&value).as_deref(), Some("Google"));
+    assert_eq!(file_match::exif_text(&exif::Value::Short(vec![1])), None);
 }

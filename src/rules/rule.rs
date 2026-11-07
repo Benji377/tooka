@@ -26,6 +26,29 @@ pub struct Rule {
     pub when: Conditions,
     /// Actions to perform when conditions match.
     pub then: Vec<Action>,
+    /// What to do when a destination of this rule already exists.
+    #[serde(default, skip_serializing_if = "OnConflict::is_default")]
+    pub on_conflict: OnConflict,
+}
+
+/// What a rule does when the destination of a move, copy or rename already exists
+/// (or is already the destination of another file in the same sort run).
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, Default, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum OnConflict {
+    /// Stop the whole sort before anything is changed and report the conflict.
+    #[default]
+    Abort,
+    /// Leave this file untouched and continue with the other files.
+    Skip,
+    /// Keep both files by giving the new one a free name such as `name (1).ext`.
+    Rename,
+}
+
+impl OnConflict {
+    fn is_default(&self) -> bool {
+        *self == Self::default()
+    }
 }
 
 /// Contains matching criteria to determine when a rule applies.
@@ -167,7 +190,7 @@ impl Rule {
         let content = fs::read_to_string(path)
             .map_err(|e| RuleValidationError::InvalidFormat(format!("Failed to read file: {e}")))?;
 
-        if content.trim_start().starts_with("rules:") {
+        if is_multi_rule_document(&content) {
             // Multiple rules
             let parsed: Result<RulesWrapper, _> = serde_saphyr::from_str(&content);
             match parsed {
@@ -208,6 +231,24 @@ impl Rule {
             return Err(RuleValidationError::NoActions(self.id.clone()));
         }
 
+        if let Some(pattern) = &self.when.filename
+            && let Err(e) = regex::Regex::new(pattern)
+        {
+            return Err(RuleValidationError::InvalidCondition(
+                self.id.clone(),
+                format!("Invalid filename regex '{pattern}': {e}"),
+            ));
+        }
+
+        if let Some(pattern) = &self.when.path
+            && let Err(e) = glob::Pattern::new(pattern)
+        {
+            return Err(RuleValidationError::InvalidCondition(
+                self.id.clone(),
+                format!("Invalid path glob '{pattern}': {e}"),
+            ));
+        }
+
         if let Some(metadata) = &self.when.metadata {
             let mut keys = std::collections::HashSet::new();
             for field in metadata {
@@ -215,6 +256,17 @@ impl Rule {
                     return Err(RuleValidationError::InvalidCondition(
                         self.id.clone(),
                         format!("Duplicate metadata key '{}'", field.key),
+                    ));
+                }
+                if let Some(pattern) = &field.value
+                    && let Err(e) = glob::Pattern::new(pattern)
+                {
+                    return Err(RuleValidationError::InvalidCondition(
+                        self.id.clone(),
+                        format!(
+                            "Invalid glob '{pattern}' for metadata key '{}': {e}",
+                            field.key
+                        ),
                     ));
                 }
             }
@@ -262,62 +314,183 @@ impl Rule {
     }
 
     fn action_validation(&self) -> Option<Result<(), RuleValidationError>> {
-        // Action validation
+        let invalid = |i: usize, msg: &str| {
+            Some(Err(RuleValidationError::InvalidAction(
+                self.id.clone(),
+                i,
+                msg.into(),
+            )))
+        };
+        // Index of the first `execute` action. Commands run after all file
+        // operations of a sort, so a later move/copy/rename would make the
+        // `{{path}}` they received point to a file that is no longer there.
+        let mut first_execute: Option<usize> = None;
+
         for (i, action) in self.then.iter().enumerate() {
             match action {
-                Action::Move(inner) => {
-                    if inner.to.trim().is_empty() {
-                        return Some(Err(RuleValidationError::InvalidAction(
-                            self.id.clone(),
-                            i,
-                            "Missing destination path".into(),
-                        )));
-                    }
-                }
-                Action::Copy(inner) => {
-                    if inner.to.trim().is_empty() {
-                        return Some(Err(RuleValidationError::InvalidAction(
-                            self.id.clone(),
-                            i,
-                            "Missing destination path".into(),
-                        )));
+                Action::Move(MoveAction { to, .. }) | Action::Copy(CopyAction { to, .. }) => {
+                    if to.trim().is_empty() {
+                        return invalid(i, "Missing destination path");
                     }
                 }
                 Action::Rename(inner) => {
                     if inner.to.trim().is_empty() {
-                        return Some(Err(RuleValidationError::InvalidAction(
-                            self.id.clone(),
+                        return invalid(i, "Missing rename target path");
+                    }
+                    if inner.to.contains(['/', '\\']) {
+                        return invalid(
                             i,
-                            "Missing rename target path".into(),
-                        )));
+                            "Rename target must be a file name, not a path (use a move action to change folders)",
+                        );
                     }
                 }
-                Action::Delete(inner) => {
-                    if inner.trash && !self.when.is_symlink.unwrap_or(false) {
-                        log::warn!(
-                            "Rule {}: Delete action with trash enabled but file is not marked as symlink",
-                            self.id
-                        );
+                Action::Delete(_) => {
+                    if i + 1 < self.then.len() {
+                        return invalid(i, "Delete must be the last action of a rule");
                     }
                 }
                 Action::Execute(inner) => {
                     if inner.command.trim().is_empty() {
-                        return Some(Err(RuleValidationError::InvalidAction(
-                            self.id.clone(),
-                            i,
-                            "Missing command to execute".into(),
-                        )));
+                        return invalid(i, "Missing command to execute");
                     }
+                    first_execute.get_or_insert(i);
                 }
                 Action::Skip => {}
+            }
+
+            if let Some(exec_index) = first_execute
+                && matches!(
+                    action,
+                    Action::Move(_) | Action::Copy(_) | Action::Rename(_)
+                )
+            {
+                return invalid(
+                    i,
+                    &format!(
+                        "Move, copy and rename must come before execute (action {exec_index}), because commands run after all file operations"
+                    ),
+                );
             }
         }
         None
     }
 }
 
+/// Returns true if a YAML document holds several rules under `rules:`
+/// (as opposed to a single rule). Comments, blank lines and the `---`
+/// document marker before it are ignored.
+pub(crate) fn is_multi_rule_document(content: &str) -> bool {
+    content
+        .lines()
+        .map(str::trim)
+        .find(|line| !line.is_empty() && !line.starts_with('#') && *line != "---")
+        .is_some_and(|line| line.starts_with("rules:"))
+}
+
 /// Wrapper for multi-rule YAML files
 #[derive(Debug, Serialize, Deserialize)]
 struct RulesWrapper {
     pub rules: Vec<Rule>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn rule_with(then: Vec<Action>) -> Rule {
+        Rule {
+            id: "r".into(),
+            name: "R".into(),
+            enabled: true,
+            description: None,
+            priority: 1,
+            when: Conditions {
+                any: None,
+                filename: None,
+                extensions: None,
+                path: None,
+                size_kb: None,
+                mime_type: None,
+                created_date: None,
+                modified_date: None,
+                is_symlink: None,
+                metadata: None,
+            },
+            then,
+            on_conflict: OnConflict::default(),
+        }
+    }
+
+    fn mv() -> Action {
+        Action::Move(MoveAction {
+            to: "/dest".into(),
+            preserve_structure: false,
+        })
+    }
+
+    fn exec() -> Action {
+        Action::Execute(ExecuteAction {
+            command: "echo".into(),
+            args: vec!["{{path}}".into()],
+        })
+    }
+
+    #[test]
+    fn execute_must_come_after_file_operations() {
+        assert!(rule_with(vec![mv(), exec()]).validate(true).is_ok());
+        assert!(rule_with(vec![exec(), mv()]).validate(true).is_err());
+    }
+
+    #[test]
+    fn delete_must_be_last() {
+        let delete = Action::Delete(DeleteAction { trash: true });
+        assert!(rule_with(vec![mv(), delete.clone()]).validate(true).is_ok());
+        assert!(rule_with(vec![delete, mv()]).validate(true).is_err());
+    }
+
+    #[test]
+    fn rename_target_must_be_a_file_name() {
+        let rename = |to: &str| Action::Rename(RenameAction { to: to.into() });
+        assert!(
+            rule_with(vec![rename("{{filename}}-x.txt")])
+                .validate(true)
+                .is_ok()
+        );
+        assert!(
+            rule_with(vec![rename("sub/{{filename}}")])
+                .validate(true)
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn multi_rule_files_may_start_with_comments() {
+        assert!(is_multi_rule_document(
+            "# my rules\n\n---\nrules:\n- id: a\n"
+        ));
+        assert!(!is_multi_rule_document("# one rule\nid: a\n"));
+    }
+
+    #[test]
+    fn invalid_patterns_are_reported() {
+        let mut rule = rule_with(vec![mv()]);
+        rule.when.filename = Some("([unclosed".into());
+        assert!(rule.validate(true).is_err());
+
+        let mut rule = rule_with(vec![mv()]);
+        rule.when.path = Some("[!".into());
+        assert!(rule.validate(true).is_err());
+    }
+
+    #[test]
+    fn on_conflict_defaults_to_abort_and_is_not_written_when_default() {
+        let yaml = "id: r\nname: R\nenabled: true\ndescription: null\npriority: 1\nwhen:\n  extensions: [pdf]\nthen:\n- action: skip\n";
+        let rule: Rule = serde_saphyr::from_str(yaml).unwrap();
+        assert_eq!(rule.on_conflict, OnConflict::Abort);
+        let written = crate::utils::yaml::to_string(&rule).unwrap();
+        assert!(!written.contains("on_conflict"), "{written}");
+
+        let rule: Rule = serde_saphyr::from_str(&format!("{yaml}on_conflict: rename\n")).unwrap();
+        assert_eq!(rule.on_conflict, OnConflict::Rename);
+    }
 }

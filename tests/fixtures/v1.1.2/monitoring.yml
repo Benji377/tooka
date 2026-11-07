@@ -1,0 +1,16 @@
+version: 1
+folders:
+- path: @ROOT@/watch-ok
+  interval_seconds: 600
+  last_run: 2026-11-07T21:59:23.552986681Z
+  last_status: !Success
+    files_processed: 0
+  rule_filter: null
+- path: @ROOT@/watch-gone
+  interval_seconds: 300
+  last_run: 2026-11-07T21:59:23.553319503Z
+  last_status: !Failed
+    error: 'Failed to collect files: Config error: Path ''@ROOT@/watch-gone'' does not exist or is not a directory.'
+  rule_filter:
+  - photos
+  - junk

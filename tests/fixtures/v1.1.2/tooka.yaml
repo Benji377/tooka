@@ -1,0 +1,4 @@
+version: 0
+source_folder: @ROOT@/src
+rules_file: @ROOT@/data/rules.yaml
+logs_folder: @ROOT@/data/logs

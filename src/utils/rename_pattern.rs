@@ -57,9 +57,11 @@ fn apply_filters(value: String, filters: &[&str]) -> String {
                 .ok()
                 .map(|dt| dt.with_timezone(&Local))
                 .or_else(|| {
-                    // Try EXIF format
-                    NaiveDateTime::parse_from_str(&val, "%Y:%m:%d %H:%M:%S")
-                        .ok()
+                    // EXIF dates as shown by kamadak-exif ("2024-05-01 12:30:00")
+                    // and in their raw EXIF form ("2024:05:01 12:30:00").
+                    ["%Y-%m-%d %H:%M:%S", "%Y:%m:%d %H:%M:%S"]
+                        .iter()
+                        .find_map(|f| NaiveDateTime::parse_from_str(&val, f).ok())
                         .and_then(|dt| Local.from_local_datetime(&dt).single())
                 });
 
@@ -95,8 +97,10 @@ pub(crate) fn extract_metadata(file_path: &Path) -> Result<HashMap<String, Strin
         && let Ok(reader) = Reader::new().read_from_container(&mut std::io::BufReader::new(file))
     {
         for field in reader.fields() {
-            let key = format!("EXIF:{:?}:{:?}", field.ifd_num, field.tag); // e.g., EXIF:In:DateTime
-            let value = field.display_value().with_unit(&reader).to_string();
+            // e.g. "EXIF:Make" -> "Google" (text without the display quotes)
+            let key = format!("EXIF:{}", field.tag);
+            let value = crate::file::file_match::exif_text(&field.value)
+                .unwrap_or_else(|| field.display_value().with_unit(&reader).to_string());
             map.insert(key, value);
         }
 
@@ -107,4 +111,50 @@ pub(crate) fn extract_metadata(file_path: &Path) -> Result<HashMap<String, Strin
     }
 
     Ok(map)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn render(template: &str, key: &str, value: &str) -> String {
+        let metadata = HashMap::from([(key.to_string(), value.to_string())]);
+        evaluate_template(template, Path::new("/x/photo.jpg"), &metadata)
+    }
+
+    #[test]
+    fn filename_is_the_name_without_extension() {
+        assert_eq!(render("{{filename}}-1.jpg", "k", "v"), "photo-1.jpg");
+    }
+
+    #[test]
+    fn date_filter_understands_exif_dates() {
+        for raw in ["2024-05-01 12:30:00", "2024:05:01 12:30:00"] {
+            assert_eq!(
+                render(
+                    "{{metadata.EXIF:DateTime|date:%Y-%m-%d}}_{{filename}}",
+                    "EXIF:DateTime",
+                    raw
+                ),
+                "2024-05-01_photo"
+            );
+        }
+    }
+
+    #[test]
+    fn date_filter_understands_file_times() {
+        assert_eq!(
+            render(
+                "{{metadata.modified|date:%Y}}",
+                "modified",
+                "2023-02-03T04:05:06+00:00"
+            ),
+            "2023"
+        );
+    }
+
+    #[test]
+    fn unknown_placeholders_become_empty() {
+        assert_eq!(render("a{{nope}}b{{metadata.missing}}c", "k", "v"), "abc");
+    }
 }

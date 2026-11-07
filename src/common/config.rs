@@ -6,14 +6,14 @@
 //! It provides functionality to load, save, reset, and display configuration
 //! settings from a user-specific file (typically stored in `$HOME/.config/tooka/config.yml`).
 
-use super::environment::{get_dir_with_env, get_source_folder};
+use super::environment::{config_dir, data_dir, default_source_folder};
 use crate::{
     core::context::{CONFIG_FILE_NAME, CONFIG_VERSION, DEFAULT_LOGS_FOLDER, RULES_FILE_NAME},
     core::error::TookaError,
 };
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use std::{env, fs, path::PathBuf};
+use std::{fs, path::PathBuf};
 
 /// Represents the user configuration for Tooka.
 ///
@@ -47,25 +47,10 @@ impl Default for Config {
 impl Config {
     /// Creates a new configuration with fallback paths
     fn new_with_fallbacks() -> Self {
-        let home_dir = env::var("HOME").map_or_else(
-            |_| {
-                log::warn!("$HOME not set; using current directory as fallback.");
-                PathBuf::from(".")
-            },
-            PathBuf::from,
-        );
-
-        let source_folder = get_source_folder(&home_dir);
-        let data_dir = get_dir_with_env(
-            "TOOKA_DATA_DIR",
-            |d| d.data_dir(),
-            &home_dir,
-            ".local/share",
-        );
-
+        let data_dir = data_dir();
         Self {
             version: CONFIG_VERSION,
-            source_folder,
+            source_folder: default_source_folder(),
             rules_file: data_dir.join(RULES_FILE_NAME),
             logs_folder: data_dir.join(DEFAULT_LOGS_FOLDER),
         }
@@ -100,14 +85,8 @@ impl Config {
     /// # Errors
     /// Returns a [`TookaError`] if the configuration could not be written to disk.
     pub fn save(&self) -> Result<(), TookaError> {
-        let config_path = Self::config_path();
-        if let Some(parent) = config_path.parent() {
-            fs::create_dir_all(parent)?;
-        }
-        let file = fs::File::create(&config_path)?;
-        let mut writer = std::io::BufWriter::new(file);
-        crate::utils::yaml::to_writer(&mut writer, self)?;
-        std::io::Write::flush(&mut writer)?;
+        let content = crate::utils::yaml::to_string(self)?;
+        crate::utils::fsutil::write_atomic(&Self::config_path(), content.as_bytes())?;
         Ok(())
     }
 
@@ -142,19 +121,8 @@ impl Config {
         crate::utils::yaml::to_string(self).unwrap_or_else(|_| "Failed to serialize config".into())
     }
 
-    /// Returns the path to the configuration file, creating it if necessary
-    fn config_path() -> std::path::PathBuf {
-        let home_dir = env::var("HOME").map_or_else(
-            |_| {
-                log::warn!("$HOME not set; using current directory as fallback.");
-                PathBuf::from(".")
-            },
-            PathBuf::from,
-        );
-
-        let config_dir =
-            get_dir_with_env("TOOKA_CONFIG_DIR", |d| d.config_dir(), &home_dir, ".config");
-
-        config_dir.join(CONFIG_FILE_NAME)
+    /// Returns the path to the configuration file.
+    fn config_path() -> PathBuf {
+        config_dir().join(CONFIG_FILE_NAME)
     }
 }

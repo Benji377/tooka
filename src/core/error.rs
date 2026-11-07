@@ -33,9 +33,6 @@ pub enum TookaError {
     #[error("YAML serialization error: {0}")]
     YamlSerialize(#[from] serde_saphyr::SerializeError),
 
-    #[error("File operation error: {0}")]
-    FileOperationError(String),
-
     // === Config ===
     #[error("Config error: {0}")]
     ConfigError(String),

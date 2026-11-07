@@ -1,0 +1,3 @@
+# Files written by released versions; keep them byte-for-byte (no CRLF
+# conversion on Windows checkouts).
+tests/fixtures/** -text

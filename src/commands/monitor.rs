@@ -8,11 +8,11 @@
 //! - Run the background daemon
 
 use crate::cli;
-use crate::common::config::Config;
-use crate::common::monitoring::{MonitorConfig, MonitoredFolder, RunStatus};
-use crate::core::sorter;
-use crate::rules::rules_file::RulesFile;
-use anyhow::Result;
+use crate::common::environment;
+use crate::common::monitoring::{DaemonGuard, MonitorConfig, MonitoredFolder, RunStatus};
+use crate::core::engine::{self, Progress, SortError};
+use crate::core::{interrupt, sorter};
+use anyhow::{Result, bail};
 use chrono::Local;
 use clap::{Args, Subcommand};
 use colored::Colorize;
@@ -255,7 +255,7 @@ fn show_status() -> Result<()> {
         println!("  {} {}", "Status:".bright_white(), status_str);
 
         // Time until next run
-        if let Some(seconds) = monitor_config.time_until_next_run(&folder.path) {
+        if let Some(seconds) = MonitorConfig::time_until_next_run(folder).filter(|s| *s > 0) {
             let minutes = seconds / 60;
             let hours = minutes / 60;
             let remaining_minutes = minutes % 60;
@@ -271,7 +271,7 @@ fn show_status() -> Result<()> {
                 "Next Run:".bright_white(),
                 time_str.bright_yellow()
             );
-        } else if monitor_config.is_due(folder) {
+        } else if MonitorConfig::is_due(folder) {
             println!(
                 "  {} {}",
                 "Next Run:".bright_white(),
@@ -292,47 +292,31 @@ fn show_status() -> Result<()> {
 }
 
 fn run_daemon(args: &DaemonRunArgs) -> Result<()> {
-    // Check if daemon is already running
-    if MonitorConfig::is_daemon_running() {
-        cli::error("Monitoring daemon is already running");
-        cli::info("Use 'tooka monitor daemon stop' to stop the running daemon first");
-        return Ok(());
-    }
+    let Some(_guard) = DaemonGuard::acquire()? else {
+        bail!(
+            "Monitoring daemon is already running. Use 'tooka monitor daemon stop' to stop it first."
+        );
+    };
 
-    cli::header("⏰ Starting Monitoring Daemon");
-    cli::info("The daemon will run continuously and sort folders at their scheduled intervals");
-    cli::info("Press Ctrl+C to stop the daemon");
-    println!();
-
-    log::info!(
-        "Starting monitoring daemon with check interval {} seconds",
-        args.check_interval
-    );
-
-    let mut monitor_config = MonitorConfig::load()?;
-    let config = Config::load()?;
-
+    let monitor_config = MonitorConfig::load()?;
     if monitor_config.folders.is_empty() {
         cli::warning("No folders are currently being monitored");
         cli::info("Use 'tooka monitor add <path>' to add a folder");
         return Ok(());
     }
 
-    // Write PID file
-    MonitorConfig::write_pid()?;
+    interrupt::install_handler();
+    watch_for_stop_request();
 
-    // Set up signal handler for graceful shutdown
-    let running = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(true));
-    let r = running.clone();
+    cli::header("⏰ Starting Monitoring Daemon");
+    cli::info("The daemon will run continuously and sort folders at their scheduled intervals");
+    cli::info("Press Ctrl+C to stop the daemon");
+    println!();
+    log::info!(
+        "Starting monitoring daemon with check interval {} seconds",
+        args.check_interval
+    );
 
-    if let Err(e) = ctrlc::set_handler(move || {
-        r.store(false, std::sync::atomic::Ordering::SeqCst);
-    }) {
-        cli::warning(&format!("Failed to set Ctrl-C handler: {}", e));
-        log::warn!("Failed to set Ctrl-C handler: {}", e);
-    }
-
-    // Display initial status
     for folder in &monitor_config.folders {
         println!(
             "  📁 {} (every {} seconds)",
@@ -342,111 +326,128 @@ fn run_daemon(args: &DaemonRunArgs) -> Result<()> {
     }
     println!();
 
-    while running.load(std::sync::atomic::Ordering::SeqCst) {
-        // Reload config each iteration to pick up changes
-        monitor_config = MonitorConfig::load()?;
-
-        for folder in monitor_config.folders.clone() {
-            if monitor_config.is_due(&folder) {
-                run_folder_sort(&mut monitor_config, &folder, &config)?;
+    while !interrupt::is_interrupted() {
+        // Reload each iteration to pick up folders added or removed meanwhile.
+        match MonitorConfig::load() {
+            Ok(config) => {
+                for folder in config.folders.iter().filter(|f| MonitorConfig::is_due(f)) {
+                    if interrupt::is_interrupted() {
+                        break;
+                    }
+                    run_folder_sort(folder);
+                }
+            }
+            Err(e) => {
+                cli::error(&format!("Could not read the monitoring configuration: {e}"));
+                log::error!("Could not read the monitoring configuration: {e}");
             }
         }
-
-        thread::sleep(Duration::from_secs(args.check_interval));
+        sleep_unless_interrupted(Duration::from_secs(args.check_interval.max(1)));
     }
 
-    // Clean up PID file on exit
     println!();
-    cli::info("Stopping monitoring daemon...");
-    MonitorConfig::remove_pid()?;
-    cli::success("Daemon stopped successfully");
+    cli::success("Daemon stopped");
     log::info!("Monitoring daemon stopped");
-
     Ok(())
 }
 
-fn run_folder_sort(
-    monitor_config: &mut MonitorConfig,
-    folder: &MonitoredFolder,
-    _config: &Config,
-) -> Result<()> {
+/// Turns a stop request from `tooka monitor daemon stop` into the same
+/// clean shutdown as Ctrl+C (works on every platform, unlike signals).
+fn watch_for_stop_request() {
+    let path = MonitorConfig::stop_request_path();
+    thread::spawn(move || {
+        loop {
+            if path.exists() {
+                log::info!("Stop requested");
+                let _ = std::fs::remove_file(&path);
+                interrupt::request();
+                return;
+            }
+            thread::sleep(Duration::from_millis(250));
+        }
+    });
+}
+
+/// Sleeps for `duration`, waking up early when the user asks to stop.
+fn sleep_unless_interrupted(duration: Duration) {
+    let step = Duration::from_millis(250);
+    let mut slept = Duration::ZERO;
+    while slept < duration && !interrupt::is_interrupted() {
+        thread::sleep(step);
+        slept += step;
+    }
+}
+
+fn run_folder_sort(folder: &MonitoredFolder) {
     let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S");
     cli::info(&format!(
-        "[{}] Sorting folder: {}",
-        timestamp,
+        "[{timestamp}] Sorting folder: {}",
         folder.path.display()
     ));
-
     log::info!(
         "Running scheduled sort for folder: {}",
         folder.path.display()
     );
 
-    // Load rules
-    let rules_file = match RulesFile::load() {
-        Ok(rf) => rf,
-        Err(e) => {
-            let error_msg = format!("Failed to load rules: {}", e);
-            cli::error(&error_msg);
-            monitor_config.update_status(&folder.path, RunStatus::Failed { error: error_msg })?;
-            return Ok(());
-        }
-    };
-
-    // Get optimized rules with filter
-    let optimized_rules = match rules_file.optimized_with_filter(folder.rule_filter.as_deref()) {
-        Ok(rules) => rules,
-        Err(e) => {
-            let error_msg = format!("Failed to optimize rules: {}", e);
-            cli::error(&error_msg);
-            monitor_config.update_status(&folder.path, RunStatus::Failed { error: error_msg })?;
-            return Ok(());
-        }
-    };
-
-    // Collect files
-    let files = match sorter::collect_files(&folder.path) {
-        Ok(f) => f,
-        Err(e) => {
-            let error_msg = format!("Failed to collect files: {}", e);
-            cli::error(&error_msg);
-            monitor_config.update_status(&folder.path, RunStatus::Failed { error: error_msg })?;
-            return Ok(());
-        }
-    };
-
-    // Sort files
-    match sorter::sort_files(
-        &files,
+    let status = match sorter::sort_folder(
         &folder.path,
-        &optimized_rules,
+        folder.rule_filter.as_deref(),
         false,
-        Option::<fn()>::None,
+        &Progress::none(),
     ) {
-        Ok(results) => {
-            let files_processed = results.len();
+        Ok(report) => {
+            let changed = report
+                .results
+                .iter()
+                .filter(|r| r.action != "skip" && r.action != "unchanged")
+                .count();
+            for warning in &report.warnings {
+                cli::warning(warning);
+            }
+            for failure in &report.commit_failures {
+                cli::error(failure);
+            }
             cli::success(&format!(
-                "[{}] Sorted {} file(s) in {}",
-                timestamp,
-                files_processed,
+                "[{timestamp}] Sorted {changed} file(s) in {}",
                 folder.path.display()
             ));
-            log::info!(
-                "Successfully sorted {} files in folder: {}",
-                files_processed,
-                folder.path.display()
-            );
-            monitor_config.update_status(&folder.path, RunStatus::Success { files_processed })?;
+            if report.commit_failures.is_empty() {
+                RunStatus::Success {
+                    files_processed: changed,
+                }
+            } else {
+                RunStatus::Failed {
+                    error: format!(
+                        "files were sorted, but {} follow-up task(s) failed: {}",
+                        report.commit_failures.len(),
+                        report.commit_failures.join("; ")
+                    ),
+                }
+            }
+        }
+        Err(SortError::Busy) => {
+            // A manual sort is running; try again at the next check.
+            cli::info("Another sort is running; will try again later");
+            return;
         }
         Err(e) => {
-            let error_msg = format!("Sorting failed: {}", e);
-            cli::error(&format!("[{}] {}", timestamp, error_msg));
-            log::error!("Failed to sort folder {}: {}", folder.path.display(), e);
-            monitor_config.update_status(&folder.path, RunStatus::Failed { error: error_msg })?;
+            cli::error(&format!("[{timestamp}] {e}"));
+            log::error!("Failed to sort folder {}: {e}", folder.path.display());
+            RunStatus::Failed {
+                error: e.to_string(),
+            }
         }
-    }
+    };
 
-    Ok(())
+    // Reload before saving, so changes made while sorting are kept.
+    let result =
+        MonitorConfig::load().and_then(|mut config| config.update_status(&folder.path, status));
+    if let Err(e) = result {
+        log::warn!(
+            "Could not save the status of {}: {e}",
+            folder.path.display()
+        );
+    }
 }
 
 fn stop_daemon() -> Result<()> {
@@ -457,81 +458,88 @@ fn stop_daemon() -> Result<()> {
         return Ok(());
     }
 
-    match MonitorConfig::read_pid()? {
-        Some(pid) => {
-            log::info!("Stopping monitoring daemon with PID {}", pid);
+    // Ask politely: the daemon stops at its next safe point and undoes a
+    // sort in progress, exactly as with Ctrl+C.
+    MonitorConfig::request_stop()?;
+    if wait_until_stopped(Duration::from_secs(30)) {
+        cli::success("Monitoring daemon stopped");
+        return Ok(());
+    }
 
-            #[cfg(unix)]
-            {
-                use std::process::Command;
-
-                // Send SIGTERM signal
-                let result = Command::new("kill")
-                    .arg("-TERM")
-                    .arg(pid.to_string())
-                    .status();
-
-                match result {
-                    Ok(status) if status.success() => {
-                        // Wait a bit for the daemon to shut down gracefully
-                        thread::sleep(Duration::from_millis(500));
-
-                        // Check if it's still running
-                        if MonitorConfig::is_daemon_running() {
-                            cli::warning("Daemon still running, sending stronger signal...");
-                            let _ = Command::new("kill")
-                                .arg("-KILL")
-                                .arg(pid.to_string())
-                                .status();
-                            thread::sleep(Duration::from_millis(200));
-                        }
-
-                        // Clean up PID file if daemon didn't
-                        let _ = MonitorConfig::remove_pid();
-
-                        cli::success("Monitoring daemon stopped successfully");
-                        log::info!("Monitoring daemon stopped");
-                    }
-                    Ok(_) => {
-                        cli::error(&format!("Failed to stop daemon with PID {}", pid));
-                        // Clean up stale PID file
-                        let _ = MonitorConfig::remove_pid();
-                    }
-                    Err(e) => {
-                        cli::error(&format!("Failed to send signal to daemon: {}", e));
-                        // Clean up stale PID file
-                        let _ = MonitorConfig::remove_pid();
-                    }
-                }
-            }
-
-            #[cfg(not(unix))]
-            {
-                // On Windows, we need a different approach
-                cli::warning("Stopping daemon on Windows is not yet implemented");
-                cli::info("Please stop the daemon manually using Task Manager or Ctrl+C");
-            }
-        }
-        None => {
-            cli::warning("No PID file found for running daemon");
+    // A sort that copies a large file can take a while to reach a safe
+    // point; killing it now would leave the sort for `tooka recover`.
+    if engine::journal::exists(&environment::data_dir()) {
+        cli::info("The daemon is finishing a sort; waiting up to 10 more minutes...");
+        if wait_until_stopped(Duration::from_secs(600)) {
+            cli::success("Monitoring daemon stopped");
+            return Ok(());
         }
     }
 
+    let Some(pid) = MonitorConfig::read_pid()? else {
+        bail!(
+            "The daemon does not respond and its PID file is missing; stop it with your task manager"
+        );
+    };
+    cli::warning(&format!(
+        "The daemon (PID {pid}) does not respond; forcing it to stop"
+    ));
+    log::warn!("Force-stopping monitoring daemon with PID {pid}");
+    force_kill(pid)?;
+
+    if wait_until_stopped(Duration::from_secs(5)) {
+        let _ = std::fs::remove_file(MonitorConfig::stop_request_path());
+        cli::success("Monitoring daemon stopped");
+        cli::info("If it was in the middle of a sort, run `tooka recover` to undo that sort.");
+        Ok(())
+    } else {
+        bail!("Could not stop the monitoring daemon (PID {pid})")
+    }
+}
+
+#[cfg(unix)]
+fn force_kill(pid: u32) -> Result<()> {
+    let status = std::process::Command::new("kill")
+        .args(["-KILL", &pid.to_string()])
+        .status()?;
+    if !status.success() {
+        bail!("Failed to stop the daemon (PID {pid})");
+    }
     Ok(())
+}
+
+#[cfg(windows)]
+fn force_kill(pid: u32) -> Result<()> {
+    let status = std::process::Command::new("taskkill")
+        .args(["/PID", &pid.to_string(), "/F"])
+        .status()?;
+    if !status.success() {
+        bail!("taskkill failed with {status}");
+    }
+    Ok(())
+}
+
+fn wait_until_stopped(timeout: Duration) -> bool {
+    let step = Duration::from_millis(200);
+    let mut waited = Duration::ZERO;
+    while waited < timeout {
+        if !MonitorConfig::is_daemon_running() {
+            return true;
+        }
+        thread::sleep(step);
+        waited += step;
+    }
+    !MonitorConfig::is_daemon_running()
 }
 
 fn check_daemon_status() -> Result<()> {
     if MonitorConfig::is_daemon_running() {
-        if let Ok(Some(pid)) = MonitorConfig::read_pid() {
-            cli::success(&format!("Monitoring daemon is running (PID: {})", pid));
-            log::info!("Monitoring daemon is running with PID {}", pid);
-        } else {
-            cli::success("Monitoring daemon is running");
+        match MonitorConfig::read_pid() {
+            Ok(Some(pid)) => cli::success(&format!("Monitoring daemon is running (PID: {pid})")),
+            _ => cli::success("Monitoring daemon is running"),
         }
     } else {
         cli::info("Monitoring daemon is not running");
-        log::info!("Monitoring daemon is not running");
     }
-
     Ok(())
 }

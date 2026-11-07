@@ -7,24 +7,59 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
 
 jobs:
-  build:
-    runs-on: macos-latest
+  # Full test suite (unit + integration tests) on every supported OS.
+  # Tooka moves and deletes user files, so platform differences in
+  # paths, renames and permissions must be exercised on all three.
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
     steps:
     - uses: actions/checkout@v7
-    
+
     - name: Rust setup
       uses: dtolnay/rust-toolchain@stable
 
     - name: Rust cache
       uses: swatinem/rust-cache@v2
 
-    - name: Pre-Check the code
-      run: cargo check --verbose
+    - name: Run all tests
+      run: cargo test --locked
 
-    - name: Test the app
-      run: cargo test --verbose -- --show-output
+    - name: Check that the benchmarks still build
+      run: cargo bench --locked --no-run
+
+  # Builds with the oldest Rust version declared in Cargo.toml (rust-version),
+  # so a dependency update that silently requires a newer compiler fails here.
+  msrv:
+    name: Minimum supported Rust version
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Read rust-version from Cargo.toml
+      id: msrv
+      run: echo "version=$(grep -m1 '^rust-version' Cargo.toml | cut -d '"' -f2)" >> "$GITHUB_OUTPUT"
+
+    - name: Rust setup (${{ steps.msrv.outputs.version }})
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: ${{ steps.msrv.outputs.version }}
+
+    - name: Rust cache
+      uses: swatinem/rust-cache@v2
+
+    - name: Check with the minimum supported Rust version
+      run: cargo check --locked --all-targets

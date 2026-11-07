@@ -1,0 +1,39 @@
+name: Security Audit
+
+on:
+  push:
+    branches: [ "main" ]
+    paths: [ "Cargo.toml", "Cargo.lock", ".github/workflows/audit.yml" ]
+  pull_request:
+    branches: [ "main" ]
+    paths: [ "Cargo.toml", "Cargo.lock", ".github/workflows/audit.yml" ]
+  schedule:
+    - cron: '29 6 * * 1'
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  audit:
+    name: Check dependencies against the RustSec advisory database
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install cargo-audit
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit
+
+      # Fails on known vulnerabilities. Runs for every dependency change,
+      # so a Renovate update that pulls in a vulnerable crate is not automerged.
+      - name: Check for vulnerabilities
+        run: cargo audit
+
+      # Also fails on "unmaintained" / "unsound" / "yanked" warnings, but only
+      # on the weekly schedule (or when started by hand). These need a human
+      # decision, so they alert you instead of blocking every Renovate PR.
+      - name: Check for unmaintained, unsound or yanked crates
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: cargo audit --deny warnings
