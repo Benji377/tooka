@@ -128,12 +128,11 @@ fn find_yaml_files(dir: &Path) -> Result<Vec<std::path::PathBuf>> {
         let entry = entry?;
         let path = entry.path();
 
-        if path.is_file() {
-            if let Some(extension) = path.extension() {
-                if extension == "yaml" || extension == "yml" {
-                    yaml_files.push(path);
-                }
-            }
+        if path.is_file()
+            && let Some(extension) = path.extension()
+            && (extension == "yaml" || extension == "yml")
+        {
+            yaml_files.push(path);
         }
     }
 

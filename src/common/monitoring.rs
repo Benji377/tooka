@@ -61,7 +61,7 @@ impl MonitorConfig {
 
         if config_path.exists() {
             let content = fs::read_to_string(&config_path)?;
-            let config: MonitorConfig = serde_yaml::from_str(&content)?;
+            let config: MonitorConfig = serde_saphyr::from_str(&content)?;
             Ok(config)
         } else {
             let config = Self::default();
@@ -78,7 +78,7 @@ impl MonitorConfig {
             fs::create_dir_all(parent)?;
         }
 
-        let content = serde_yaml::to_string(self)?;
+        let content = crate::utils::yaml::to_string(self)?;
         fs::write(&config_path, content)?;
         Ok(())
     }

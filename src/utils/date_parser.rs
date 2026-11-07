@@ -24,10 +24,10 @@ pub fn parse_date(date_str: &str) -> Result<DateTime<Utc>, String> {
     }
 
     // Try to parse as ISO 8601 date (YYYY-MM-DD)
-    if let Ok(naive_date) = chrono::NaiveDate::from_str(date_str) {
-        if let Some(naive_datetime) = naive_date.and_hms_opt(0, 0, 0) {
-            return Ok(DateTime::from_naive_utc_and_offset(naive_datetime, Utc));
-        }
+    if let Ok(naive_date) = chrono::NaiveDate::from_str(date_str)
+        && let Some(naive_datetime) = naive_date.and_hms_opt(0, 0, 0)
+    {
+        return Ok(DateTime::from_naive_utc_and_offset(naive_datetime, Utc));
     }
 
     // Try to parse as relative date

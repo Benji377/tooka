@@ -47,7 +47,7 @@ impl RulesFile {
         }
 
         let content = fs::read_to_string(&path)?;
-        let rules: Self = serde_yaml::from_str(&content)?;
+        let rules: Self = serde_saphyr::from_str(&content)?;
 
         log::debug!("Successfully loaded {} rules", rules.rules.len());
         Ok(rules)
@@ -90,7 +90,7 @@ impl RulesFile {
 
     /// Add a single rule from a YAML string, optionally overwriting existing rules
     fn add_single_rule(&mut self, yaml: &str, overwrite: bool) -> Result<(), TookaError> {
-        let rule: Rule = serde_yaml::from_str(yaml)?;
+        let rule: Rule = serde_saphyr::from_str(yaml)?;
         log::debug!("Parsed new rule: {rule:?}");
         rule.validate(true)?;
 
@@ -133,7 +133,7 @@ impl RulesFile {
 
     /// Add multiple rules from a YAML string, optionally overwriting existing rules
     fn add_multiple_rules(&mut self, yaml: &str, overwrite: bool) -> Result<(), TookaError> {
-        let parsed: RulesFile = serde_yaml::from_str(yaml)?;
+        let parsed: RulesFile = serde_saphyr::from_str(yaml)?;
 
         for rule in parsed.rules {
             log::debug!("Parsed rule: {rule:?}");
@@ -214,7 +214,7 @@ impl RulesFile {
         );
 
         if let Some(rule) = self.rules.iter().find(|r| r.id == rule_id) {
-            let content = serde_yaml::to_string(rule)?;
+            let content = crate::utils::yaml::to_string(rule)?;
             if let Some(path) = out_path {
                 fs::write(path, content)?;
                 log::debug!("Exported rule {rule_id} to {path}");
@@ -309,7 +309,9 @@ impl RulesFile {
             fs::create_dir_all(parent)?;
         }
         let file = fs::File::create(path)?;
-        serde_yaml::to_writer(file, rules)?;
+        let mut writer = std::io::BufWriter::new(file);
+        crate::utils::yaml::to_writer(&mut writer, rules)?;
+        std::io::Write::flush(&mut writer)?;
         Ok(())
     }
 

@@ -56,10 +56,10 @@ pub fn get_source_folder(home: &Path) -> std::path::PathBuf {
         return path;
     }
 
-    if let Some(user_dirs) = UserDirs::new() {
-        if let Some(downloads) = user_dirs.download_dir() {
-            return downloads.to_path_buf();
-        }
+    if let Some(user_dirs) = UserDirs::new()
+        && let Some(downloads) = user_dirs.download_dir()
+    {
+        return downloads.to_path_buf();
     }
 
     // Fallback to ~/Downloads

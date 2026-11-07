@@ -60,24 +60,24 @@ pub fn check_self_contradiction(rule: &Rule) -> Vec<Conflict> {
     let mut conflicts = Vec::new();
 
     // Check size_kb range
-    if let Some(size) = &rule.when.size_kb {
-        if let Some(conflict) = check_size_contradiction(size, &rule.id) {
-            conflicts.push(conflict);
-        }
+    if let Some(size) = &rule.when.size_kb
+        && let Some(conflict) = check_size_contradiction(size, &rule.id)
+    {
+        conflicts.push(conflict);
     }
 
     // Check created_date range
-    if let Some(date_range) = &rule.when.created_date {
-        if let Some(conflict) = check_date_contradiction(date_range, "created_date", &rule.id) {
-            conflicts.push(conflict);
-        }
+    if let Some(date_range) = &rule.when.created_date
+        && let Some(conflict) = check_date_contradiction(date_range, "created_date", &rule.id)
+    {
+        conflicts.push(conflict);
     }
 
     // Check modified_date range
-    if let Some(date_range) = &rule.when.modified_date {
-        if let Some(conflict) = check_date_contradiction(date_range, "modified_date", &rule.id) {
-            conflicts.push(conflict);
-        }
+    if let Some(date_range) = &rule.when.modified_date
+        && let Some(conflict) = check_date_contradiction(date_range, "modified_date", &rule.id)
+    {
+        conflicts.push(conflict);
     }
 
     // Check if any=true with only one or no conditions
@@ -100,17 +100,17 @@ pub fn check_self_contradiction(rule: &Rule) -> Vec<Conflict> {
 
 /// Checks for size range contradictions
 fn check_size_contradiction(size: &Range, rule_id: &str) -> Option<Conflict> {
-    if let (Some(min), Some(max)) = (size.min, size.max) {
-        if min > max {
-            return Some(Conflict::new(
-                ConflictLevel::SelfContradiction,
-                format!(
-                    "Size range is impossible: min ({} KB) > max ({} KB)",
-                    min, max
-                ),
-                rule_id.to_string(),
-            ));
-        }
+    if let (Some(min), Some(max)) = (size.min, size.max)
+        && min > max
+    {
+        return Some(Conflict::new(
+            ConflictLevel::SelfContradiction,
+            format!(
+                "Size range is impossible: min ({} KB) > max ({} KB)",
+                min, max
+            ),
+            rule_id.to_string(),
+        ));
     }
     None
 }

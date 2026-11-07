@@ -169,16 +169,16 @@ impl PDFGenerator {
 
                 self.page_break_if_needed(min_y + box_height);
 
-                if self.y == PAGE_HEIGHT - MARGIN_TOP - CONTENT_START_OFFSET {
-                    if let Some(rule_id) = &self.last_rule_id {
-                        self.write_text(
-                            &format!("> Rule: {rule_id}"),
-                            FONT_SIZE + RULE_FONT_SIZE_OFFSET,
-                            MARGIN_X,
-                            self.y,
-                        );
-                        self.y -= RULE_AFTER_SPACING; // Use consistent spacing after rule
-                    }
+                if self.y == PAGE_HEIGHT - MARGIN_TOP - CONTENT_START_OFFSET
+                    && let Some(rule_id) = &self.last_rule_id
+                {
+                    self.write_text(
+                        &format!("> Rule: {rule_id}"),
+                        FONT_SIZE + RULE_FONT_SIZE_OFFSET,
+                        MARGIN_X,
+                        self.y,
+                    );
+                    self.y -= RULE_AFTER_SPACING; // Use consistent spacing after rule
                 }
 
                 let state_name = format!("G_{}_{}", entry.matched_rule_id, entry.file_name);

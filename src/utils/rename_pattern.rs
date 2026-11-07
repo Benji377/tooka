@@ -91,18 +91,18 @@ pub(crate) fn extract_metadata(file_path: &Path) -> Result<HashMap<String, Strin
     map.insert("size".into(), metadata.len().to_string());
 
     // Attempt to parse EXIF (for JPEG/PNG)
-    if let Ok(file) = fs::File::open(file_path) {
-        if let Ok(reader) = Reader::new().read_from_container(&mut std::io::BufReader::new(file)) {
-            for field in reader.fields() {
-                let key = format!("EXIF:{:?}:{:?}", field.ifd_num, field.tag); // e.g., EXIF:In:DateTime
-                let value = field.display_value().with_unit(&reader).to_string();
-                map.insert(key, value);
-            }
+    if let Ok(file) = fs::File::open(file_path)
+        && let Ok(reader) = Reader::new().read_from_container(&mut std::io::BufReader::new(file))
+    {
+        for field in reader.fields() {
+            let key = format!("EXIF:{:?}:{:?}", field.ifd_num, field.tag); // e.g., EXIF:In:DateTime
+            let value = field.display_value().with_unit(&reader).to_string();
+            map.insert(key, value);
+        }
 
-            // Common aliases for convenience
-            if let Some(field) = reader.get_field(Tag::DateTimeOriginal, In::PRIMARY) {
-                map.insert("EXIF:DateTime".into(), field.display_value().to_string());
-            }
+        // Common aliases for convenience
+        if let Some(field) = reader.get_field(Tag::DateTimeOriginal, In::PRIMARY) {
+            map.insert("EXIF:DateTime".into(), field.display_value().to_string());
         }
     }
 

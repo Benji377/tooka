@@ -169,7 +169,7 @@ impl Rule {
 
         if content.trim_start().starts_with("rules:") {
             // Multiple rules
-            let parsed: Result<RulesWrapper, _> = serde_yaml::from_str(&content);
+            let parsed: Result<RulesWrapper, _> = serde_saphyr::from_str(&content);
             match parsed {
                 Ok(wrapper) => Ok(wrapper.rules),
                 Err(e) => Err(RuleValidationError::InvalidFormat(format!(
@@ -178,7 +178,7 @@ impl Rule {
             }
         } else {
             // Single rule
-            let rule: Result<Rule, _> = serde_yaml::from_str(&content);
+            let rule: Result<Rule, _> = serde_saphyr::from_str(&content);
             match rule {
                 Ok(r) => Ok(vec![r]),
                 Err(e) => Err(RuleValidationError::InvalidFormat(format!(
@@ -220,15 +220,14 @@ impl Rule {
             }
         }
 
-        if let Some(size) = &self.when.size_kb {
-            if let (Some(min), Some(max)) = (size.min, size.max) {
-                if min > max {
-                    return Err(RuleValidationError::InvalidCondition(
-                        self.id.clone(),
-                        "Invalid size_kb range: min > max".into(),
-                    ));
-                }
-            }
+        if let Some(size) = &self.when.size_kb
+            && let (Some(min), Some(max)) = (size.min, size.max)
+            && min > max
+        {
+            return Err(RuleValidationError::InvalidCondition(
+                self.id.clone(),
+                "Invalid size_kb range: min > max".into(),
+            ));
         }
 
         for (label, date_range) in [
@@ -236,21 +235,21 @@ impl Rule {
             ("modified_date", &self.when.modified_date),
         ] {
             if let Some(range) = date_range {
-                if let Some(from) = &range.from {
-                    if let Err(e) = parse_date(from) {
-                        return Err(RuleValidationError::InvalidCondition(
-                            self.id.clone(),
-                            format!("Invalid {label} 'from' date: {e}"),
-                        ));
-                    }
+                if let Some(from) = &range.from
+                    && let Err(e) = parse_date(from)
+                {
+                    return Err(RuleValidationError::InvalidCondition(
+                        self.id.clone(),
+                        format!("Invalid {label} 'from' date: {e}"),
+                    ));
                 }
-                if let Some(to) = &range.to {
-                    if let Err(e) = parse_date(to) {
-                        return Err(RuleValidationError::InvalidCondition(
-                            self.id.clone(),
-                            format!("Invalid {label} 'to' date: {e}"),
-                        ));
-                    }
+                if let Some(to) = &range.to
+                    && let Err(e) = parse_date(to)
+                {
+                    return Err(RuleValidationError::InvalidCondition(
+                        self.id.clone(),
+                        format!("Invalid {label} 'to' date: {e}"),
+                    ));
                 }
             }
         }

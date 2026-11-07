@@ -28,7 +28,10 @@ pub enum TookaError {
     Csv(#[from] csv::Error),
 
     #[error("YAML parse error: {0}")]
-    Yaml(#[from] serde_yaml::Error),
+    Yaml(#[from] serde_saphyr::Error),
+
+    #[error("YAML serialization error: {0}")]
+    YamlSerialize(#[from] serde_saphyr::SerializeError),
 
     #[error("File operation error: {0}")]
     FileOperationError(String),
