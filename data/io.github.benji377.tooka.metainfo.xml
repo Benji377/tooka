@@ -61,6 +61,7 @@ With a minimal CLI interface, Tooka enables automated file handling through filt
             <p>Sorting is now all-or-nothing: Tooka plans every step first and undoes everything if a step fails or the sort is cancelled. Existing files are never overwritten</p>
             <p>New per-rule on_conflict setting (abort, skip, rename) and new recover command for sorts interrupted by a crash or power loss</p>
             <p>Moves across drives, the {{path}} placeholder for execute actions, and a more reliable monitoring daemon</p>
+            <p>Delete actions now move files to the trash unless trash: false is set</p>
             <p>Fixed rules with any: true matching every file, and EXIF dates in rename templates not being formatted</p>
             <p>Switched YAML handling to the maintained serde-saphyr library, with clearer error messages for invalid rule files</p>
         </description>

@@ -162,9 +162,15 @@ pub struct RenameAction {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct DeleteAction {
-    /// If true, moves the file to the trash instead of permanently deleting it
-    #[serde(default)]
+    /// If true (the default), moves the file to the trash instead of
+    /// deleting it permanently. Only an explicit `trash: false` deletes
+    /// permanently.
+    #[serde(default = "default_trash")]
     pub trash: bool,
+}
+
+fn default_trash() -> bool {
+    true
 }
 
 /// Represents an execute action, specifying the command to run and its arguments
@@ -461,6 +467,17 @@ mod tests {
                 .validate(true)
                 .is_err()
         );
+    }
+
+    #[test]
+    fn delete_uses_the_trash_unless_told_otherwise() {
+        let parse = |yaml: &str| match serde_saphyr::from_str::<Action>(yaml).unwrap() {
+            Action::Delete(d) => d.trash,
+            other => panic!("unexpected {other:?}"),
+        };
+        assert!(parse("action: delete\n"));
+        assert!(parse("action: delete\ntrash: true\n"));
+        assert!(!parse("action: delete\ntrash: false\n"));
     }
 
     #[test]

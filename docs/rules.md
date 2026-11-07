@@ -136,8 +136,8 @@ on your system, the sort stops before anything happens.
   trash: true
 ```
 
-> **`trash` defaults to `false`, which deletes permanently.** Write
-> `trash: true` to move files to the trash instead.
+Files go to the trash by default. Write `trash: false` to delete them
+permanently instead.
 
 Deleting happens at the very end of a sort, and only for files that did not
 change during the sort.
