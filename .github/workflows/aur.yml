@@ -1,0 +1,51 @@
+name: Publish to AUR
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    # Skip pre-releases; only stable versions go to the AUR
+    if: ${{ !github.event.release.prerelease }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # On a release, use its tag; when run manually, fetch the latest release tag
+      - name: Determine version
+        id: version
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          tag="$RELEASE_TAG"
+          if [ -z "$tag" ]; then
+            tag="$(gh api "repos/${{ github.repository }}/releases/latest" --jq .tag_name)"
+          fi
+          version="${tag#v}"
+          if ! [[ "$version" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
+            echo "::error::Invalid version '$version' (from tag '$tag')"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Set pkgver in PKGBUILD
+        run: |
+          sed -i \
+            -e "s/^pkgver=.*/pkgver=${{ steps.version.outputs.version }}/" \
+            -e "s/^pkgrel=.*/pkgrel=1/" \
+            aur/PKGBUILD
+          grep -E '^pkg(ver|rel)=' aur/PKGBUILD
+
+      - name: Publish tooka to the AUR
+        uses: KSXGitHub/github-actions-deploy-aur@v4.2.0
+        with:
+          pkgname: tooka
+          pkgbuild: aur/PKGBUILD
+          updpkgsums: true
+          commit_username: Benjamin Demetz
+          commit_email: demetzbenjamin23@gmail.com
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: Update to ${{ steps.version.outputs.version }}
