@@ -3,10 +3,12 @@
 [![clippy]](https://github.com/Benji377/tooka/actions/workflows/clippy.yml)
 [![test]](https://github.com/Benji377/tooka/actions/workflows/test.yml)
 [![tooka version][crates-tooka]](https://crates.io/crates/tooka)
+[![downloads]](https://github.com/Benji377/tooka/releases)
 
 [clippy]: https://img.shields.io/github/actions/workflow/status/Benji377/tooka/clippy.yml?label=Clippy&logo=rust&style=for-the-badge&labelColor=555555
 [test]: https://img.shields.io/github/actions/workflow/status/Benji377/tooka/test.yml?label=Tests&logo=githubactions&style=for-the-badge&labelColor=555555
 [crates-tooka]: https://img.shields.io/crates/v/tooka?logo=rust&style=for-the-badge&labelColor=555555
+[downloads]: https://img.shields.io/github/downloads/Benji377/tooka/total?label=Downloads&logo=github&style=for-the-badge&labelColor=555555
 
 <div align="center">
   <img src="./assets/logo-banner.png" alt="Tooka logo" style="width: 80%">
