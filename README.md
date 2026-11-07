@@ -71,7 +71,7 @@ Tooka is designed for speed with:
 
 Run performance benchmarks:
 ```bash
-cargo run --release --bin performance_benchmarks
+cargo bench
 ```
 
 See [benches/README.md](benches/README.md) for details.

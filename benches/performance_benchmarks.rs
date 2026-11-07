@@ -1,7 +1,7 @@
 //! Performance Benchmarks for Tooka
-//! 
+//!
 //! This benchmark suite measures performance across critical code paths.
-//! 
+//!
 //! ## Purpose
 //! - Track performance across releases and commits
 //! - Identify performance regressions early
@@ -26,10 +26,10 @@ use std::time::{Duration, Instant};
 trait Benchmark {
     /// Name of the benchmark
     fn name(&self) -> &str;
-    
+
     /// Description of what is being benchmarked
     fn description(&self) -> &str;
-    
+
     /// Run the benchmark and return the result
     fn run(&self) -> BenchmarkResult;
 }
@@ -47,9 +47,10 @@ impl BenchmarkResult {
     fn speedup(&self) -> f64 {
         self.baseline_duration.as_nanos() as f64 / self.optimized_duration.as_nanos() as f64
     }
-    
+
     fn improvement_percent(&self) -> f64 {
-        (1.0 - self.optimized_duration.as_nanos() as f64 / self.baseline_duration.as_nanos() as f64) * 100.0
+        (1.0 - self.optimized_duration.as_nanos() as f64 / self.baseline_duration.as_nanos() as f64)
+            * 100.0
     }
 }
 
@@ -61,7 +62,11 @@ impl fmt::Display for BenchmarkResult {
         writeln!(f, "Baseline:   {:?}", self.baseline_duration)?;
         writeln!(f, "Optimized:  {:?}", self.optimized_duration)?;
         writeln!(f, "Speedup:    {:.2}x faster", self.speedup())?;
-        writeln!(f, "Improvement: {:.1}% reduction in time", self.improvement_percent())?;
+        writeln!(
+            f,
+            "Improvement: {:.1}% reduction in time",
+            self.improvement_percent()
+        )?;
         Ok(())
     }
 }
@@ -77,18 +82,18 @@ impl Benchmark for RegexCachingBenchmark {
     fn name(&self) -> &str {
         "Regex Compilation Caching"
     }
-    
+
     fn description(&self) -> &str {
         "Template evaluation with regex (common in file renaming)"
     }
-    
+
     fn run(&self) -> BenchmarkResult {
         let mut metadata = HashMap::new();
         metadata.insert("filename".to_string(), "test_file".to_string());
         metadata.insert("date".to_string(), "2025-01-01".to_string());
         let template = "File: {{filename}}, Date: {{date}}";
         let iterations = 10_000;
-        
+
         // Baseline: compile regex every time (intentionally inefficient for comparison)
         let start = Instant::now();
         #[allow(clippy::regex_creation_in_loops)]
@@ -104,12 +109,12 @@ impl Benchmark for RegexCachingBenchmark {
             black_box(result);
         }
         let baseline_duration = start.elapsed();
-        
+
         // Optimized: cached regex
         static TEMPLATE_REGEX: LazyLock<Regex> = LazyLock::new(|| {
             Regex::new(r"\{\{(.*?)\}\}").expect("Failed to compile template regex")
         });
-        
+
         let start = Instant::now();
         for _ in 0..iterations {
             let mut result = template.to_string();
@@ -122,7 +127,7 @@ impl Benchmark for RegexCachingBenchmark {
             black_box(result);
         }
         let optimized_duration = start.elapsed();
-        
+
         BenchmarkResult {
             name: self.name().to_string(),
             description: self.description().to_string(),
@@ -139,32 +144,32 @@ impl Benchmark for DateConstantCachingBenchmark {
     fn name(&self) -> &str {
         "Date Constant Caching"
     }
-    
+
     fn description(&self) -> &str {
         "Date range comparisons (used in file filtering)"
     }
-    
+
     fn run(&self) -> BenchmarkResult {
         let iterations = 100_000;
-        
+
         // Baseline: create date every time
         let start = Instant::now();
         for _ in 0..iterations {
             black_box(NaiveDate::from_ymd_opt(1970, 1, 1).expect("MIN_DATE should be valid"));
         }
         let baseline_duration = start.elapsed();
-        
+
         // Optimized: cached date
         static MIN_DATE_CACHED: LazyLock<NaiveDate> = LazyLock::new(|| {
             NaiveDate::from_ymd_opt(1970, 1, 1).expect("MIN_DATE should be valid")
         });
-        
+
         let start = Instant::now();
         for _ in 0..iterations {
             black_box(*MIN_DATE_CACHED);
         }
         let optimized_duration = start.elapsed();
-        
+
         BenchmarkResult {
             name: self.name().to_string(),
             description: self.description().to_string(),
@@ -181,11 +186,11 @@ impl Benchmark for ExtensionMatchingBenchmark {
     fn name(&self) -> &str {
         "Extension Matching"
     }
-    
+
     fn description(&self) -> &str {
         "File extension checks (hot path in file matching)"
     }
-    
+
     fn run(&self) -> BenchmarkResult {
         let extensions = [
             "jpg".to_string(),
@@ -196,21 +201,21 @@ impl Benchmark for ExtensionMatchingBenchmark {
         ];
         let test_ext = "webp";
         let iterations = 100_000;
-        
+
         // Baseline: String comparison
         let start = Instant::now();
         for _ in 0..iterations {
             black_box(extensions.iter().any(|e| e == test_ext));
         }
         let baseline_duration = start.elapsed();
-        
+
         // Optimized: as_str() comparison
         let start = Instant::now();
         for _ in 0..iterations {
             black_box(extensions.iter().any(|e| e.as_str() == test_ext));
         }
         let optimized_duration = start.elapsed();
-        
+
         BenchmarkResult {
             name: self.name().to_string(),
             description: self.description().to_string(),
@@ -228,42 +233,45 @@ fn main() {
     println!("🚀 Tooka Performance Benchmarks\n");
     println!("This benchmark suite tracks performance across critical code paths.");
     println!("Run this regularly to ensure optimizations are maintained.\n");
-    
+
     // Register all benchmarks here
     let benchmarks: Vec<Box<dyn Benchmark>> = vec![
         Box::new(RegexCachingBenchmark),
         Box::new(DateConstantCachingBenchmark),
         Box::new(ExtensionMatchingBenchmark),
     ];
-    
+
     let mut results = Vec::new();
-    
+
     // Run all benchmarks
     for benchmark in benchmarks {
         let result = benchmark.run();
         println!("{}\n", result);
         results.push(result);
     }
-    
+
     // Summary
     println!("═════════════════════════════════════════");
     println!("✅ Summary");
     println!("═════════════════════════════════════════");
     println!("Ran {} benchmark(s)", results.len());
-    
+
     let avg_speedup = results.iter().map(|r| r.speedup()).sum::<f64>() / results.len() as f64;
     println!("Average speedup: {:.2}x", avg_speedup);
-    
+
     // Find best and worst
-    if let Some(best) = results.iter().max_by(|a, b| a.speedup().partial_cmp(&b.speedup()).unwrap()) {
+    if let Some(best) = results
+        .iter()
+        .max_by(|a, b| a.speedup().partial_cmp(&b.speedup()).unwrap())
+    {
         println!("Best improvement: {} ({:.2}x)", best.name, best.speedup());
     }
-    
+
     println!("\n💡 Guidelines:");
     println!("  • Run benchmarks before and after changes");
     println!("  • Track results across releases");
     println!("  • Investigate performance regressions promptly");
     println!("  • Add new benchmarks for critical code paths");
-    
+
     println!("\n📝 To add benchmarks: See comments in benches/performance_benchmarks.rs");
 }

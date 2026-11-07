@@ -22,7 +22,7 @@ pub fn show_banner() {
     );
     println!(
         "{}",
-    "Visit https://github.com/benji377/tooka for documentation".bright_blue()
+        "Visit https://github.com/benji377/tooka for documentation".bright_blue()
     );
     println!();
 }
@@ -89,12 +89,7 @@ pub fn show_version() {
     println!(
         "{} {}",
         "Repository:".bright_white(),
-    "https://github.com/benji377/tooka".blue()
-    );
-    println!(
-        "{} {}",
-        "Website:".bright_white(),
-        "https://tooka.deno.dev".blue()
+        "https://github.com/Benji377/tooka".blue()
     );
     println!();
 }

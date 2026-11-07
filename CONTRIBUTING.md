@@ -99,7 +99,7 @@ Documentation improvements are always appreciated:
 
 6. **Run performance benchmarks:**
    ```bash
-   cargo run --release --bin performance_benchmarks
+   cargo bench
    ```
    
    See [benches/README.md](benches/README.md) for details on the benchmark suite.
@@ -131,7 +131,7 @@ Documentation improvements are always appreciated:
 
 ### Performance
 
-- Run benchmarks for performance-sensitive changes: `cargo run --release --bin performance_benchmarks`
+- Run benchmarks for performance-sensitive changes: `cargo bench`
 - Add new benchmarks for critical code paths (see [benches/README.md](benches/README.md))
 - Investigate performance regressions before merging
 - Document expected performance characteristics

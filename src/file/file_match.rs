@@ -23,14 +23,12 @@ const MAX_DATE: (i32, u32, u32) = (9999, 12, 31);
 
 /// Cached minimum date for range comparisons
 static MIN_DATE_NAIVE: LazyLock<NaiveDate> = LazyLock::new(|| {
-    NaiveDate::from_ymd_opt(MIN_DATE.0, MIN_DATE.1, MIN_DATE.2)
-        .expect("MIN_DATE should be valid")
+    NaiveDate::from_ymd_opt(MIN_DATE.0, MIN_DATE.1, MIN_DATE.2).expect("MIN_DATE should be valid")
 });
 
 /// Cached maximum date for range comparisons
 static MAX_DATE_NAIVE: LazyLock<NaiveDate> = LazyLock::new(|| {
-    NaiveDate::from_ymd_opt(MAX_DATE.0, MAX_DATE.1, MAX_DATE.2)
-        .expect("MAX_DATE should be valid")
+    NaiveDate::from_ymd_opt(MAX_DATE.0, MAX_DATE.1, MAX_DATE.2).expect("MAX_DATE should be valid")
 });
 
 /// Matches a file's name against a regular expression pattern
@@ -128,12 +126,9 @@ fn is_date_in_range(date: NaiveDate, date_range: &DateRange) -> bool {
             parse_date_with_fallback(from_str, *MIN_DATE_NAIVE)
         });
 
-    let to = date_range
-        .to
-        .as_ref()
-        .map_or(*MAX_DATE_NAIVE, |to_str| {
-            parse_date_with_fallback(to_str, *MAX_DATE_NAIVE)
-        });
+    let to = date_range.to.as_ref().map_or(*MAX_DATE_NAIVE, |to_str| {
+        parse_date_with_fallback(to_str, *MAX_DATE_NAIVE)
+    });
 
     date >= from && date <= to
 }

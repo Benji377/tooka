@@ -58,7 +58,7 @@ impl MonitorConfig {
     /// Load monitoring configuration from disk
     pub fn load() -> Result<Self, TookaError> {
         let config_path = Self::config_path();
-        
+
         if config_path.exists() {
             let content = fs::read_to_string(&config_path)?;
             let config: MonitorConfig = serde_yaml::from_str(&content)?;
@@ -73,11 +73,11 @@ impl MonitorConfig {
     /// Save monitoring configuration to disk
     pub fn save(&self) -> Result<(), TookaError> {
         let config_path = Self::config_path();
-        
+
         if let Some(parent) = config_path.parent() {
             fs::create_dir_all(parent)?;
         }
-        
+
         let content = serde_yaml::to_string(self)?;
         fs::write(&config_path, content)?;
         Ok(())
@@ -88,7 +88,7 @@ impl MonitorConfig {
         let home_dir = std::env::var("HOME")
             .map(PathBuf::from)
             .unwrap_or_else(|_| PathBuf::from("."));
-        
+
         let config_dir = home_dir.join(".config").join("tooka");
         config_dir.join("monitoring.yml")
     }
@@ -98,7 +98,7 @@ impl MonitorConfig {
         let home_dir = std::env::var("HOME")
             .map(PathBuf::from)
             .unwrap_or_else(|_| PathBuf::from("."));
-        
+
         let config_dir = home_dir.join(".config").join("tooka");
         config_dir.join("monitor.pid")
     }
@@ -106,11 +106,11 @@ impl MonitorConfig {
     /// Write the daemon PID to a file
     pub fn write_pid() -> Result<(), TookaError> {
         let pid_path = Self::pid_file_path();
-        
+
         if let Some(parent) = pid_path.parent() {
             fs::create_dir_all(parent)?;
         }
-        
+
         let pid = std::process::id();
         fs::write(&pid_path, pid.to_string())?;
         Ok(())
@@ -128,15 +128,17 @@ impl MonitorConfig {
     /// Read the daemon PID from the file
     pub fn read_pid() -> Result<Option<u32>, TookaError> {
         let pid_path = Self::pid_file_path();
-        
+
         if !pid_path.exists() {
             return Ok(None);
         }
-        
+
         let content = fs::read_to_string(&pid_path)?;
-        let pid = content.trim().parse::<u32>()
+        let pid = content
+            .trim()
+            .parse::<u32>()
             .map_err(|e| TookaError::ConfigError(format!("Invalid PID in file: {}", e)))?;
-        
+
         Ok(Some(pid))
     }
 
@@ -147,15 +149,11 @@ impl MonitorConfig {
             #[cfg(unix)]
             {
                 use std::process::Command;
-                if let Ok(output) = Command::new("ps")
-                    .arg("-p")
-                    .arg(pid.to_string())
-                    .output()
-                {
+                if let Ok(output) = Command::new("ps").arg("-p").arg(pid.to_string()).output() {
                     return output.status.success();
                 }
             }
-            
+
             #[cfg(not(unix))]
             {
                 // On Windows, we can use different approach
@@ -225,11 +223,7 @@ impl MonitorConfig {
     }
 
     /// Update the status of a monitored folder after a run
-    pub fn update_status(
-        &mut self,
-        path: &PathBuf,
-        status: RunStatus,
-    ) -> Result<(), TookaError> {
+    pub fn update_status(&mut self, path: &PathBuf, status: RunStatus) -> Result<(), TookaError> {
         if let Some(folder) = self.folders.iter_mut().find(|f| &f.path == path) {
             folder.last_run = Some(Utc::now());
             folder.last_status = status;

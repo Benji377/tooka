@@ -770,10 +770,32 @@ mod tests {
         assert_eq!(skip_count, 15); // unknown files
     }
 
+    /// Where to write a PDF meant for manual inspection.
+    ///
+    /// By default the PDF goes into a temporary directory that is cleaned up
+    /// when the returned guard is dropped. Set `TOOKA_TEST_PDF_DIR` to keep the
+    /// generated PDFs in that directory instead, e.g.
+    /// `TOOKA_TEST_PDF_DIR=. cargo test pdf_generation`.
+    fn inspection_pdf_path(name: &str) -> (Option<tempfile::TempDir>, std::path::PathBuf) {
+        match std::env::var_os("TOOKA_TEST_PDF_DIR") {
+            Some(dir) => {
+                let dir = std::path::PathBuf::from(dir);
+                std::fs::create_dir_all(&dir).expect("Should create TOOKA_TEST_PDF_DIR");
+                (None, dir.join(name))
+            }
+            None => {
+                let tmp = tempfile::tempdir().expect("Should create temp dir");
+                let path = tmp.path().join(name);
+                (Some(tmp), path)
+            }
+        }
+    }
+
     #[test]
     fn test_pdf_generation_for_inspection() {
-        // Create PDF in the project directory for easy inspection
-        let pdf_path = std::path::Path::new("test_report_refactored.pdf");
+        // Set TOOKA_TEST_PDF_DIR to keep the PDF for manual inspection
+        let (_tmp, pdf_path) = inspection_pdf_path("test_report_refactored.pdf");
+        let pdf_path = pdf_path.as_path();
 
         // Create mock results with various actions to test all features
         let mut mock_results = Vec::new();
@@ -887,7 +909,8 @@ mod tests {
     #[test]
     fn test_pdf_generation_with_long_paths() {
         // Create PDF with extremely long paths to test wrapping
-        let pdf_path = std::path::Path::new("test_report_long_paths.pdf");
+        let (_tmp, pdf_path) = inspection_pdf_path("test_report_long_paths.pdf");
+        let pdf_path = pdf_path.as_path();
 
         let mock_results = vec![
             MatchResult {

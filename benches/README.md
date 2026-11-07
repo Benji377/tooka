@@ -7,15 +7,12 @@ This directory contains the performance benchmark suite for Tooka. The benchmark
 To run the complete benchmark suite:
 
 ```bash
-cargo run --release --bin performance_benchmarks
+cargo bench
 ```
 
-Or build and run directly:
-
-```bash
-cargo build --release --bin performance_benchmarks
-./target/release/performance_benchmarks
-```
+This builds the suite with the optimized `bench` profile and runs it. It is a
+plain `main()` program (`harness = false`), so no extra benchmark framework is
+needed.
 
 ## Purpose
 
@@ -138,7 +135,7 @@ Consider tracking benchmark results over time:
 
 ```bash
 # Run and save results with timestamp
-cargo run --release --bin performance_benchmarks > "benchmark_$(date +%Y%m%d).txt"
+cargo bench > "benchmark_$(date +%Y%m%d).txt"
 ```
 
 This creates a historical record for trend analysis.
@@ -149,7 +146,7 @@ To integrate benchmarks into CI:
 
 ```yaml
 - name: Run performance benchmarks
-  run: cargo run --release --bin performance_benchmarks
+  run: cargo bench
 ```
 
 Add thresholds or comparison logic to fail CI if performance regresses significantly.

@@ -147,10 +147,7 @@ fn add_folder(args: &AddMonitorArgs) -> Result<()> {
 }
 
 fn remove_folder(args: &RemoveMonitorArgs) -> Result<()> {
-    cli::info(&format!(
-        "Removing folder from monitoring: {}",
-        args.path
-    ));
+    cli::info(&format!("Removing folder from monitoring: {}", args.path));
 
     let path = PathBuf::from(&args.path);
     let mut monitor_config = MonitorConfig::load()?;
@@ -194,7 +191,11 @@ fn list_folders() -> Result<()> {
                 rules.join(", ").bright_yellow()
             );
         } else {
-            println!("  {} {}", "Rules:".bright_white(), "All rules".bright_yellow());
+            println!(
+                "  {} {}",
+                "Rules:".bright_white(),
+                "All rules".bright_yellow()
+            );
         }
 
         println!();
@@ -234,14 +235,20 @@ fn show_status() -> Result<()> {
                 local_time.format("%Y-%m-%d %H:%M:%S")
             );
         } else {
-            println!("  {} {}", "Last Run:".bright_white(), "Never".bright_black());
+            println!(
+                "  {} {}",
+                "Last Run:".bright_white(),
+                "Never".bright_black()
+            );
         }
 
         // Status
         let status_str = match &folder.last_status {
             RunStatus::NotRun => "Not run yet".bright_black().to_string(),
             RunStatus::Success { files_processed } => {
-                format!("✓ Success ({} files)", files_processed).green().to_string()
+                format!("✓ Success ({} files)", files_processed)
+                    .green()
+                    .to_string()
             }
             RunStatus::Failed { error } => format!("✗ Failed: {}", error).red().to_string(),
         };
@@ -274,11 +281,7 @@ fn show_status() -> Result<()> {
             println!(
                 "  {} {}",
                 "Next Run:".bright_white(),
-                format!(
-                    "In {} seconds",
-                    folder.interval_seconds
-                )
-                .bright_yellow()
+                format!("In {} seconds", folder.interval_seconds).bright_yellow()
             );
         }
 
@@ -301,7 +304,10 @@ fn run_daemon(args: &DaemonRunArgs) -> Result<()> {
     cli::info("Press Ctrl+C to stop the daemon");
     println!();
 
-    log::info!("Starting monitoring daemon with check interval {} seconds", args.check_interval);
+    log::info!(
+        "Starting monitoring daemon with check interval {} seconds",
+        args.check_interval
+    );
 
     let mut monitor_config = MonitorConfig::load()?;
     let config = Config::load()?;
@@ -314,11 +320,11 @@ fn run_daemon(args: &DaemonRunArgs) -> Result<()> {
 
     // Write PID file
     MonitorConfig::write_pid()?;
-    
+
     // Set up signal handler for graceful shutdown
     let running = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(true));
     let r = running.clone();
-    
+
     if let Err(e) = ctrlc::set_handler(move || {
         r.store(false, std::sync::atomic::Ordering::SeqCst);
     }) {
@@ -371,7 +377,10 @@ fn run_folder_sort(
         folder.path.display()
     ));
 
-    log::info!("Running scheduled sort for folder: {}", folder.path.display());
+    log::info!(
+        "Running scheduled sort for folder: {}",
+        folder.path.display()
+    );
 
     // Load rules
     let rules_file = match RulesFile::load() {
@@ -407,7 +416,13 @@ fn run_folder_sort(
     };
 
     // Sort files
-    match sorter::sort_files(&files, &folder.path, &optimized_rules, false, Option::<fn()>::None) {
+    match sorter::sort_files(
+        &files,
+        &folder.path,
+        &optimized_rules,
+        false,
+        Option::<fn()>::None,
+    ) {
         Ok(results) => {
             let files_processed = results.len();
             cli::success(&format!(
@@ -421,10 +436,7 @@ fn run_folder_sort(
                 files_processed,
                 folder.path.display()
             );
-            monitor_config.update_status(
-                &folder.path,
-                RunStatus::Success { files_processed },
-            )?;
+            monitor_config.update_status(&folder.path, RunStatus::Success { files_processed })?;
         }
         Err(e) => {
             let error_msg = format!("Sorting failed: {}", e);
@@ -439,7 +451,7 @@ fn run_folder_sort(
 
 fn stop_daemon() -> Result<()> {
     cli::info("🛑 Stopping monitoring daemon...");
-    
+
     if !MonitorConfig::is_daemon_running() {
         cli::warning("Monitoring daemon is not running");
         return Ok(());
@@ -448,22 +460,22 @@ fn stop_daemon() -> Result<()> {
     match MonitorConfig::read_pid()? {
         Some(pid) => {
             log::info!("Stopping monitoring daemon with PID {}", pid);
-            
+
             #[cfg(unix)]
             {
                 use std::process::Command;
-                
+
                 // Send SIGTERM signal
                 let result = Command::new("kill")
                     .arg("-TERM")
                     .arg(pid.to_string())
                     .status();
-                
+
                 match result {
                     Ok(status) if status.success() => {
                         // Wait a bit for the daemon to shut down gracefully
                         thread::sleep(Duration::from_millis(500));
-                        
+
                         // Check if it's still running
                         if MonitorConfig::is_daemon_running() {
                             cli::warning("Daemon still running, sending stronger signal...");
@@ -473,10 +485,10 @@ fn stop_daemon() -> Result<()> {
                                 .status();
                             thread::sleep(Duration::from_millis(200));
                         }
-                        
+
                         // Clean up PID file if daemon didn't
                         let _ = MonitorConfig::remove_pid();
-                        
+
                         cli::success("Monitoring daemon stopped successfully");
                         log::info!("Monitoring daemon stopped");
                     }
@@ -492,7 +504,7 @@ fn stop_daemon() -> Result<()> {
                     }
                 }
             }
-            
+
             #[cfg(not(unix))]
             {
                 // On Windows, we need a different approach

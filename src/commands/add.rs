@@ -170,7 +170,7 @@ fn check_and_display_conflicts(
 
         // Check for conflicts with existing rules
         let rule_conflicts = contradiction::check_rule_conflicts(rule, &rules_file.rules);
-        
+
         let mut potential_conflicts = Vec::new();
         let mut overlaps = Vec::new();
 
@@ -201,8 +201,10 @@ fn check_and_display_conflicts(
             ));
             for conflict in potential_conflicts {
                 if let Some(conflicting_id) = &conflict.conflicting_rule_id {
-                    cli::warning(&format!("   - Conflicts with rule '{}': {}", 
-                        conflicting_id, conflict.message));
+                    cli::warning(&format!(
+                        "   - Conflicts with rule '{}': {}",
+                        conflicting_id, conflict.message
+                    ));
                 } else {
                     cli::warning(&format!("   - {}", conflict.message));
                 }

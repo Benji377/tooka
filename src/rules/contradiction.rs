@@ -160,7 +160,11 @@ fn count_conditions(conditions: &Conditions) -> usize {
     if conditions.filename.is_some() {
         count += 1;
     }
-    if conditions.extensions.as_ref().is_some_and(|e| !e.is_empty()) {
+    if conditions
+        .extensions
+        .as_ref()
+        .is_some_and(|e| !e.is_empty())
+    {
         count += 1;
     }
     if conditions.path.is_some() {
@@ -181,11 +185,7 @@ fn count_conditions(conditions: &Conditions) -> usize {
     if conditions.is_symlink.is_some() {
         count += 1;
     }
-    if conditions
-        .metadata
-        .as_ref()
-        .is_some_and(|m| !m.is_empty())
-    {
+    if conditions.metadata.as_ref().is_some_and(|m| !m.is_empty()) {
         count += 1;
     }
     count
@@ -306,10 +306,7 @@ fn check_filename_overlap(pattern1: &Option<String>, pattern2: &Option<String>) 
 }
 
 /// Checks if two extension lists can match the same files
-fn check_extension_overlap(
-    exts1: Option<&Vec<String>>,
-    exts2: Option<&Vec<String>>,
-) -> bool {
+fn check_extension_overlap(exts1: Option<&Vec<String>>, exts2: Option<&Vec<String>>) -> bool {
     match (exts1, exts2) {
         (None, _) | (_, None) => true,
         (Some(e1), Some(e2)) => {
@@ -326,7 +323,11 @@ fn check_path_overlap(path1: &Option<String>, path2: &Option<String>) -> bool {
         (None, _) | (_, None) => true,
         (Some(p1), Some(p2)) => {
             // Simple heuristic: paths might overlap if they share a prefix or use wildcards
-            p1 == p2 || p1.contains('*') || p2.contains('*') || p1.starts_with(p2) || p2.starts_with(p1)
+            p1 == p2
+                || p1.contains('*')
+                || p2.contains('*')
+                || p1.starts_with(p2)
+                || p2.starts_with(p1)
         }
     }
 }

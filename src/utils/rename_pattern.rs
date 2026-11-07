@@ -8,9 +8,8 @@ use std::path::Path;
 use std::sync::LazyLock;
 
 /// Cached regex pattern for template matching
-static TEMPLATE_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"\{\{(.*?)\}\}").expect("Failed to compile template regex")
-});
+static TEMPLATE_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"\{\{(.*?)\}\}").expect("Failed to compile template regex"));
 
 /// Evaluates a template string with metadata and file information.
 pub(crate) fn evaluate_template(

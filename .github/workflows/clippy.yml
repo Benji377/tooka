@@ -25,20 +25,31 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-          components: clippy
+          components: clippy, rustfmt
 
       - name: Install required cargo
         run: cargo install clippy-sarif sarif-fmt
 
-      - name: Run rust-clippy
+      # Produces the SARIF report for GitHub code scanning. The pipe hides
+      # clippy's exit code, so this step never fails on its own; the
+      # "Enforce" steps below are what actually fail the job.
+      - name: Run rust-clippy (SARIF report)
         run:
           cargo clippy
+          --all-targets
           --all-features
           --message-format=json | clippy-sarif | tee rust-clippy-results.sarif | sarif-fmt
         continue-on-error: true
 
       - name: Upload analysis results to GitHub
+        if: always()
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: rust-clippy-results.sarif
           wait-for-processing: true
+
+      - name: Enforce formatting
+        run: cargo fmt --all --check
+
+      - name: Enforce clippy (deny warnings)
+        run: cargo clippy --all-targets --all-features -- -D warnings
